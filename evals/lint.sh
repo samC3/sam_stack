@@ -23,10 +23,10 @@ for f in "$ROOT"/kernel/*/SKILL.md "$ROOT"/workflows/*/SKILL.md; do
   grep -q '^## Contract' "$f" || err "missing '## Contract'"
   contract="$(awk '/^## Contract/{c=1; next} c && /^```/{n++; if (n==2) exit; next} c && n==1' "$f")"
   for field in Layer Input Output Stop Returns; do
-    grep -Eq "^$field: *[^ ]" <<<"$contract" || err "contract missing '$field:'"
+    grep -Eq "^$field:[[:space:]]*[^[:space:]]" <<<"$contract" || err "contract missing '$field:'"
   done
 
-  layer="$(sed -n 's/^Layer: *\([a-z]*\).*/\1/p' <<<"$contract")"
+  layer="$(sed -n 's/^Layer:[[:space:]]*\([a-z]*\).*/\1/p' <<<"$contract")"
   case "$area:$layer" in
     kernel:verb|kernel:combinator|workflows:workflow) ;;
     *) err "layer '$layer' doesn't belong in $area/" ;;
