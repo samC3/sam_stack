@@ -10,7 +10,10 @@ kernel/
   distill/SKILL.md   # write it down for a named reader
   prove/SKILL.md     # does it work       → work/<slug>/proofs.md     (P1…)
   judge/SKILL.md     # is it good / which one → work/<slug>/verdicts.md (J1…)
+workflows/
+  make-skill/SKILL.md  # builds or regenerates a skill, plus its eval case, from the verbs
 evals/
+  lint.sh            # free structural check of every skill and case
   run.sh             # eval runner
   lib.sh             # helpers for check.sh files
   cases/<name>/      # one directory per case
@@ -31,10 +34,14 @@ evals/
 2. **Install skills by linking, not copying,** so edits here take effect everywhere:
 
    ```sh
-   for s in ~/code/skills_v3/kernel/*/; do ln -s "$s" ~/.claude/skills/"$(basename "$s")"; done
+   for s in ~/code/skills_v3/kernel/*/ ~/code/skills_v3/workflows/*/; do
+     [ -f "$s/SKILL.md" ] && ln -s "$s" ~/.claude/skills/"$(basename "$s")"
+   done
    ```
 
 3. **Every skill follows the contract in `KERNEL.md`.** New skills are compositions of the kernel verbs. Add a new verb only when the kernel's admission rule allows it.
+
+4. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval case for it, then checks both with `evals/lint.sh`. It runs a paid eval only once per new case; anything beyond that, it asks you first.
 
 ## Evals
 
@@ -43,12 +50,18 @@ Evals check that each verb keeps the one habit it exists for. They run the real 
 ### Running
 
 ```sh
+evals/lint.sh                             # free: structure of every skill and case
 evals/run.sh                              # every case, once
 evals/run.sh prove-red-first              # named cases only
 evals/run.sh --repeat 3 --jobs 6 ask-cache-grill
+
+# Baseline comparison: run against the skills as of HEAD
+git worktree add /tmp/skills-base HEAD
+evals/run.sh --root /tmp/skills-base ask-cache-grill
+git worktree remove /tmp/skills-base
 ```
 
-Each run goes to `evals/.runs/<timestamp>/<case>/r<n>/` (gitignored), which holds:
+Each run goes to `evals/.runs/<timestamp>-<pid>/<case>/r<n>/` (gitignored), which holds:
 - `repo/`: the fixture after the run
 - `transcript.jsonl` and `digest.txt`: what the agent did
 - `grade.md`: the grader's verdict
@@ -57,7 +70,7 @@ The script prints PASS or FAIL for each run, then a summary of passes per case. 
 
 Each case runs in a fresh git repo, set up the way a real repo would be:
 - `KERNEL.md` is imported from `AGENTS.md` with a relative path. Imports from outside the project don't load in headless runs.
-- Each verb is linked into `.claude/skills/`.
+- Each skill in `kernel/` and `workflows/` (or the `--root` checkout) is linked into `.claude/skills/`.
 - Only project settings load (`--setting-sources project`), so your user-level skills and memory don't interfere.
 
 ### Writing a case
@@ -71,7 +84,7 @@ evals/cases/<name>/
   rubric.md    # criteria for a grader model (optional)
 ```
 
-`check.sh` runs first, with these helpers from `lib.sh` available:
+`setup.sh` gets `$ROOT`, the path of this repo, so it can copy tooling into the run repo. `check.sh` runs first, with these helpers from `lib.sh` available:
 - `invoked <skill>`
 - `invoked_none`
 - `has <glob> <regex>`
@@ -95,6 +108,7 @@ These are a seed set: one case per verb's key habit, plus one negative trigger. 
 | `prove-red-first` | shows the check failing before the fix and passing after | 4/4 |
 | `judge-clean-diff` | reports no defects on a correct change and states criteria first | 3/4 |
 | `trigger-negative-rename` | doesn't fire any kernel verb for a plain rename | 4/4 |
+| `make-skill-honest-report` | writes a lint-clean workflow and an eval case without asking settled questions, and reports the behaviour eval as not run | not run yet |
 
 The single failures for `distill` and `judge` could be noise from the skill or from the grader. Leave them unchanged unless they come back.
 
@@ -145,7 +159,7 @@ Run an eval only when its result would change what you do:
    - Repeat only the cases whose result is ambiguous.
 2. **Spend repeats where you're uncertain.** A case that has passed 4 out of 4 needs one run as a regression check. A case at 2 out of 4 is where repeats teach you something.
 3. **Stop when the answer is clear.** If the first 3 runs fail the same way, you don't need 5.
-4. **Use the cheapest check first.** Deterministic checks gate the grader, so push criteria into `check.sh` where you can.
+4. **Use the cheapest check first.** Run `evals/lint.sh` before any paid run; it's free. Deterministic checks gate the grader, so push criteria into `check.sh` where you can.
 5. **Use a cheaper grader, but the real model under test.** The grader can run on a smaller model once it has been checked against human labels. The agent under test should be the model you actually use, or the results won't carry over.
 
 Not built yet:

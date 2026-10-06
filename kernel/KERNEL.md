@@ -11,7 +11,8 @@ Rules every skill in this set obeys. It is in context only where an `AGENTS.md` 
 | **Workflow** | Wiring: which verbs, in what order, with what parameters. Carries no discipline of its own | Verbs, combinators |
 
 - Verbs never invoke workflows.
-- Only `codify` edits skills or this kernel.
+- Verbs and combinators live in `kernel/<name>/`, workflows in `workflows/<name>/`. Every skill has at least one eval case in `evals/cases/<name>-<habit>/`.
+- Only `make-skill` and `codify` write skill files. Only `codify` edits this kernel.
 - If a workflow starts explaining *how* to ask, verify, or review, that text belongs in a verb.
 - A new verb is admitted only when about three workflows need something no existing verb plus parameters can express.
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Run kernel evals.
-# Usage: evals/run.sh [--repeat N] [--jobs J] [case-name ...]   (default: all cases, N=1, J=4)
+# Usage: evals/run.sh [--repeat N] [--jobs J] [--root DIR] [case-name ...]
+#   defaults: all cases, N=1, J=4, DIR=this repo
+#   --root takes KERNEL.md and the skills from another checkout of this repo
+#   (e.g. `git worktree add` of HEAD) to compare a baseline against the working tree.
 #
 # Each case is evals/cases/<name>/ with:
 #   prompt.md   the user prompt (required)
@@ -17,11 +20,13 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EVALS="$ROOT/evals"
 REPEAT=1
+SKILLS_ROOT="${SKILLS_ROOT:-$ROOT}"
 JOBS=4
 while [ $# -gt 0 ]; do
   case "$1" in
     --repeat) REPEAT="$2"; shift 2 ;;
     --jobs) JOBS="$2"; shift 2 ;;
+    --root) SKILLS_ROOT="$(cd "$2" && pwd)"; shift 2 ;;
     --one) ONE=1; shift ;;
     *) break ;;
   esac
@@ -45,12 +50,14 @@ run_case() {
   local repo="$dir/repo"
 
   [ -d "$src/fixture" ] && cp -R "$src/fixture/." "$repo/"
-  cp "$ROOT/kernel/KERNEL.md" "$repo/KERNEL.md"
+  cp "$SKILLS_ROOT/kernel/KERNEL.md" "$repo/KERNEL.md"
   echo "@KERNEL.md" > "$repo/AGENTS.md"
   mkdir -p "$repo/.claude/skills"
-  for v in "$ROOT"/kernel/*/; do ln -s "$v" "$repo/.claude/skills/$(basename "$v")"; done
+  for v in "$SKILLS_ROOT"/kernel/*/ "$SKILLS_ROOT"/workflows/*/; do
+    [ -f "$v/SKILL.md" ] && ln -sn "$v" "$repo/.claude/skills/$(basename "$v")"
+  done
   (cd "$repo" && git init -q && git add -A && git commit -qm "fixture")
-  [ -f "$src/setup.sh" ] && (cd "$repo" && bash "$src/setup.sh")
+  [ -f "$src/setup.sh" ] && (cd "$repo" && ROOT="$ROOT" bash "$src/setup.sh")
 
   (cd "$repo" && claude -p "$(cat "$src/prompt.md")" \
       --setting-sources project \
@@ -93,9 +100,9 @@ $work
 # Worker mode: xargs re-invokes this script once per (case, rep).
 if [ "${ONE:-}" = 1 ]; then run_case "$1" "$2"; exit 0; fi
 
-OUT="$EVALS/.runs/$(date +%Y%m%d-%H%M%S)"
+OUT="$EVALS/.runs/$(date +%Y%m%d-%H%M%S)-$$"
 mkdir -p "$OUT"
-export OUT
+export OUT SKILLS_ROOT
 
 cases=("$@")
 [ ${#cases[@]} -eq 0 ] && cases=($(ls "$EVALS/cases"))

@@ -12,7 +12,7 @@ Turn state into something a named reader can act on without the conversation.
 ```
 Layer:     verb
 Input:     reader (who they are, what they already know, what they will do next); format; source ids or "this conversation"; slug
-Output:    work/<slug>/<format>.md (tickets: work/<slug>/tickets/NN-<name>.md; skill: skills/<name>/SKILL.md)
+Output:    work/<slug>/<format>.md (tickets: work/<slug>/tickets/NN-<name>.md; skill: kernel/<name>/SKILL.md for a verb or combinator, workflows/<name>/SKILL.md for a workflow; eval-case: evals/cases/<name>-<habit>/)
 Stop:      a cold reader, given only the artifact, states the intended next action and has no questions the sources already answer
 Returns:   the path, plus any gaps marked as open questions
 ```
@@ -27,6 +27,7 @@ Returns:   the path, plus any gaps marked as open questions
 | `pr` | What changed and why · How it was proved (`P` ids) · Risk · Where the reviewer should look |
 | `summary` | Answer first, then support, then open questions |
 | `skill` | Frontmatter + `## Contract` per KERNEL.md, then Procedure, entry format if it writes a log, and Rules |
+| `eval-case` | `prompt.md` that invites the habit's typical failure · `fixture/`, the smallest set of files that still tempts that failure · `check.sh` for everything a script can check · `rubric.md` only for what a script can't. It must be able to fail |
 
 Any other format is allowed. Define its shape from the reader's next action before you draft.
 
