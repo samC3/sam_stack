@@ -27,6 +27,7 @@ Returns:   decisions made, items left open with your default for each
    - the question
    - 2–4 options, with your recommendation first and the reason for it
    Use a structured question tool when one is available.
+   End your turn on that question. If an answer will need a follow-up ("if B, then what's your latency target?"), the follow-up waits for the answer. Don't attach it conditionally.
 5. **After each answer:** log `D<n>`, then update the tree. Add branches the answer opened and drop branches it closed.
 6. **Push back once.** If an answer contradicts a finding or creates a risk, say so with the evidence (`F2`), then accept the human's call and log it.
 7. **Surface conflicts.** If an answer contradicts an earlier decision, ask which one wins and log the winner as superseding the other.

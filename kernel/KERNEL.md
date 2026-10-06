@@ -35,7 +35,10 @@ A skill with no stop condition is not finished.
 
 Skills communicate through files, not conversation memory, so work survives sessions, subagents and handoffs.
 
-- Work lives in `work/<slug>/` at the repo root (or the scratchpad when there is no repo). The slug is kebab-case from the task; reuse an existing directory when the task matches it.
+- Work lives in `work/<slug>/` at the repo root and is **committed** with the branch it belongs to. That way a worktree or another session on the branch already has it, and reviewers see the reasoning beside the change. With no repo, use `~/.claude/work/<slug>/`.
+- The slug is kebab-case from the task. Reuse an existing directory when the task matches it.
+- One slug belongs to one branch. If two branches must share a slug, renumber the incoming entries when merging so ids stay unique.
+- The change that finishes the task deletes `work/<slug>/`; git history keeps the record.
 - Each verb appends to its own log, one entry per heading, with a stable id:
 
 | File | Written by | Id |
