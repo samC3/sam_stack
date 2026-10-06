@@ -31,6 +31,8 @@ evals/
 
    Check that it loaded by asking, without file reads: *"Quote principle 2 from the kernel in your context, or say NONE."*
 
+   This repo uses its own skills: `AGENTS.md` imports `kernel/KERNEL.md`, and `.claude/skills/` holds relative links to every skill. A session opened here has the kernel and the skills without anything installed in `~/.claude`. Add a link there when you add a skill.
+
 2. **Install skills by linking, not copying,** so edits here take effect everywhere:
 
    ```sh
@@ -61,7 +63,7 @@ evals/run.sh --root /tmp/skills-base ask-cache-grill
 git worktree remove /tmp/skills-base
 ```
 
-Each run goes to `evals/.runs/<timestamp>-<pid>/<case>/r<n>/` (gitignored), which holds:
+Each run goes to `~/.cache/skills_v3-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. Each run folder holds:
 - `repo/`: the fixture after the run
 - `transcript.jsonl` and `digest.txt`: what the agent did
 - `grade.md`: the grader's verdict

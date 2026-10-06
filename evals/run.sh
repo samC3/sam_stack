@@ -101,7 +101,8 @@ $work
 # Worker mode: xargs re-invokes this script once per (case, rep).
 if [ "${ONE:-}" = 1 ]; then run_case "$1" "$2"; exit 0; fi
 
-OUT="$EVALS/.runs/$(date +%Y%m%d-%H%M%S)-$$"
+# Outside this repo: a run repo nested in it would inherit its AGENTS.md.
+OUT="${EVALS_OUT:-${XDG_CACHE_HOME:-$HOME/.cache}/skills_v3-evals}/$(date +%Y%m%d-%H%M%S)-$$"
 mkdir -p "$OUT"
 export OUT SKILLS_ROOT
 
