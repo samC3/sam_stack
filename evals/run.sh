@@ -102,7 +102,7 @@ $work
 if [ "${ONE:-}" = 1 ]; then run_case "$1" "$2"; exit 0; fi
 
 # Outside this repo: a run repo nested in it would inherit its AGENTS.md.
-OUT="${EVALS_OUT:-${XDG_CACHE_HOME:-$HOME/.cache}/skills_v3-evals}/$(date +%Y%m%d-%H%M%S)-$$"
+OUT="${EVALS_OUT:-${XDG_CACHE_HOME:-$HOME/.cache}/sam_stack-evals}/$(date +%Y%m%d-%H%M%S)-$$"
 mkdir -p "$OUT"
 export OUT SKILLS_ROOT
 

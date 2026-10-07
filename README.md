@@ -1,4 +1,4 @@
-# skills_v3
+# sam_stack
 
 A small set of composable agent skills, built up from an atomic core.
 
@@ -26,7 +26,7 @@ evals/
 1. **The kernel must be in context wherever these skills are used.** Include `kernel/KERNEL.md` in the `AGENTS.md` that the session reads, either your global one or a repo's own:
 
    ```markdown
-   @~/code/skills_v3/kernel/KERNEL.md
+   @~/code/sam_stack/kernel/KERNEL.md
    ```
 
    Claude Code reads `AGENTS.md` and expands `@` imports in it. An import of a file *outside* the project needs a one-time approval in an interactive session. In a headless run (`claude -p`) it silently doesn't load. For a tool that doesn't support imports, paste the contents of `KERNEL.md` instead and re-paste it when the file changes.
@@ -38,7 +38,7 @@ evals/
 2. **Install skills by linking, not copying,** so edits here take effect everywhere:
 
    ```sh
-   for s in ~/code/skills_v3/kernel/*/ ~/code/skills_v3/workflows/*/; do
+   for s in ~/code/sam_stack/kernel/*/ ~/code/sam_stack/workflows/*/; do
      [ -f "$s/SKILL.md" ] && ln -s "$s" ~/.claude/skills/"$(basename "$s")"
    done
    ```
@@ -66,7 +66,7 @@ evals/run.sh --root /tmp/skills-base ask-cache-grill
 git worktree remove /tmp/skills-base
 ```
 
-Each run goes to `~/.cache/skills_v3-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. Each run folder holds:
+Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. Each run folder holds:
 - `repo/`: the fixture after the run
 - `transcript.jsonl` and `digest.txt`: what the agent did
 - `grade.md`: the grader's verdict
