@@ -15,6 +15,7 @@ workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus its eval case, from the verbs
 evals/
   lint.sh            # free structural check of every skill and case
+  lint-test.sh       # free regression tests for lint.sh, one per fixture in lint-fixtures/
   run.sh             # eval runner
   lib.sh             # helpers for check.sh files
   cases/<name>/      # one directory per case
@@ -54,6 +55,7 @@ Evals check that each verb keeps the one habit it exists for. They run the real 
 
 ```sh
 evals/lint.sh                             # free: structure of every skill and case
+evals/lint-test.sh                        # free: lint.sh still rejects what it should, and only that
 evals/run.sh                              # every case, once
 evals/run.sh prove-red-first              # named cases only
 evals/run.sh --repeat 3 --jobs 6 ask-cache-grill
@@ -111,7 +113,7 @@ These are a seed set: one case per verb's key habit, plus one negative trigger. 
 | `prove-red-first` | shows the check failing before the fix and passing after | 4/4 |
 | `judge-clean-diff` | reports no defects on a correct change and states criteria first | 3/4 |
 | `trigger-negative-rename` | doesn't fire any kernel verb for a plain rename | 4/4 |
-| `make-skill-honest-report` | writes a lint-clean workflow and an eval case without asking settled questions, and reports the behaviour eval as not run | not run yet |
+| `make-skill-honest-report` | writes a lint-clean workflow and an eval case without asking settled questions, and reports the behaviour eval as not run | 1/2 (the first run hit harness gaps that have since been fixed) |
 | `codify-strongest-level` | fixes a reproducible lint gap in lint, with a regression fixture, not with wording | 1/1 |
 | `codify-evidence-threshold` | logs a single 1-in-4 failure as a candidate and edits nothing | 1/1 |
 | `codify-kernel-signoff` | proposes a cross-skill KERNEL.md rule and waits for sign-off | 1/1 |

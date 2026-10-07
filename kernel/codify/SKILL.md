@@ -40,8 +40,9 @@ Returns:   the L id (or "candidate"), the level chosen, files changed, and anyth
 
    An eval check detects a failure but doesn't prevent it. A model habit therefore usually needs wording in the owning skill plus a check from step 5. Record every stronger level you passed over and why it didn't fit.
 5. **Leave a regression check that fails on the incident.** Use the cheapest kind that can:
-   - For a lint rule: a bad fixture plus a command that shows lint rejecting it with the specific error. Show that a near-miss which should pass still passes.
-   - For behaviour: a new or existing eval case. Its prompt must differ on the surface from the incident (a different domain and wording) so the fix isn't fitted to one run.
+   - For a lint rule: add a fixture in `evals/lint-fixtures/<name>/` whose `expect` names the specific error, plus a near-miss fixture that must still pass (`expect` is `ok`). Run `evals/lint-test.sh`.
+   - For behaviour: a new or existing eval case in `evals/cases/`. Its prompt must differ on the surface from the incident (a different domain and wording) so the fix isn't fitted to one run.
+   - Regression checks live only in those two places. Don't invent new check directories.
    - The original incident counts as the red run; cite it. Run the green run with `prove` and log its P id in the same slug. A paid eval gets one green run. Ask before running more.
 6. **Gate on sign-off.** Any edit to `KERNEL.md`, and any edit that removes or loosens a rule or check (lets through something it used to reject or forbid), is not applied. Write the exact proposed diff into the L entry, mark it `awaiting sign-off`, and return. Still write the regression check, since that is an addition; its green run waits for the sign-off. Additions and tightenings elsewhere go ahead.
 7. **Read the edit cold.** Would the rule make sense to someone who never saw the incident? If it quotes the incident, rewrite it.

@@ -64,7 +64,7 @@ run_case() {
       --output-format stream-json --verbose \
       --permission-mode acceptEdits \
       --add-dir "$SKILLS_ROOT/kernel" --add-dir "$SKILLS_ROOT/workflows" \
-      --allowedTools "Bash(git:*) Bash(python3:*) Bash(ls:*) Bash(cat:*) Bash(mkdir:*) Bash(grep:*) Bash(find:*) Bash(chmod:*) Bash(evals/lint.sh:*) Bash(bash evals/lint.sh:*)" \
+      --allowedTools "Bash(git:*) Bash(python3:*) Bash(ls:*) Bash(cat:*) Bash(mkdir:*) Bash(grep:*) Bash(find:*) Bash(chmod:*) Bash(bash:*) Bash(sh:*) Bash(evals/:*)" \
       --disallowedTools "AskUserQuestion" \
       > "$dir/transcript.jsonl" 2> "$dir/stderr.log")
   digest "$dir/transcript.jsonl" > "$dir/digest.txt"
