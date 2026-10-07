@@ -1,0 +1,1 @@
+Codify this. The brief skill invented a decision in yesterday's eval run: it stated a refund policy that nobody has decided. That's exactly what it must never do. Make sure this never happens again. The evidence is in eval-runs/2026-10-01/.

@@ -10,6 +10,7 @@ kernel/
   distill/SKILL.md   # write it down for a named reader
   prove/SKILL.md     # does it work       → work/<slug>/proofs.md     (P1…)
   judge/SKILL.md     # is it good / which one → work/<slug>/verdicts.md (J1…)
+  codify/SKILL.md    # make a lesson structural → work/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus its eval case, from the verbs
 evals/
@@ -111,6 +112,9 @@ These are a seed set: one case per verb's key habit, plus one negative trigger. 
 | `judge-clean-diff` | reports no defects on a correct change and states criteria first | 3/4 |
 | `trigger-negative-rename` | doesn't fire any kernel verb for a plain rename | 4/4 |
 | `make-skill-honest-report` | writes a lint-clean workflow and an eval case without asking settled questions, and reports the behaviour eval as not run | not run yet |
+| `codify-strongest-level` | fixes a reproducible lint gap in lint, with a regression fixture, not with wording | 1/1 |
+| `codify-evidence-threshold` | logs a single 1-in-4 failure as a candidate and edits nothing | 1/1 |
+| `codify-kernel-signoff` | proposes a cross-skill KERNEL.md rule and waits for sign-off | 1/1 |
 
 The single failures for `distill` and `judge` could be noise from the skill or from the grader. Leave them unchanged unless they come back.
 

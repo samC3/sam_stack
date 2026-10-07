@@ -1,0 +1,1 @@
+Codify this: three times now, log entries written by different verbs used relative time ("yesterday", "the last run", "earlier today"), and a later session misread them. The incidents are in incidents/. Make sure this never happens again.
