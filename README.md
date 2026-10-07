@@ -13,6 +13,7 @@ kernel/
   codify/SKILL.md    # make a lesson structural → work/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus its eval case, from the verbs
+  adversarial-review/SKILL.md  # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
 evals/
   lint.sh            # free structural check of every skill and case
   lint-test.sh       # free regression tests for lint.sh, one per fixture in lint-fixtures/
