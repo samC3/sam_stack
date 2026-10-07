@@ -44,6 +44,19 @@ digest() {
     else empty end' "$1"
 }
 
+# Claude Code keeps per-project state for every directory a session runs in
+# (~/.claude/projects/<path>, /private/tmp/claude-<uid>/<path>, with every
+# non-alphanumeric character of the path turned into "-"). Each eval run makes
+# fresh directories, so remove their state afterwards; the transcript is
+# already saved in the run folder.
+forget_sessions_in() {
+  local real enc
+  real="$(cd "$1" 2>/dev/null && pwd -P)" || return 0
+  case "$real/" in "$(cd "$OUT" && pwd -P)/"?*) ;; *) return 0 ;; esac
+  enc="$(printf %s "$real" | sed 's|[^A-Za-z0-9]|-|g')"
+  rm -rf "$HOME/.claude/projects/$enc" "/private/tmp/claude-$(id -u)/$enc"
+}
+
 run_case() {
   local name="$1" rep="$2" src="$EVALS/cases/$1" dir="$OUT/$1/r$2"
   mkdir -p "$dir/repo"
@@ -78,7 +91,7 @@ run_case() {
   if [ "$result" = "PASS" ] && [ -f "$src/rubric.md" ]; then
     local work=""
     [ -d "$repo/work" ] && work="$(cd "$repo" && find work -type f -exec sh -c 'echo "=== $1"; cat "$1"' _ {} \;)"
-    local grader_dir; grader_dir="$(mktemp -d)"
+    local grader_dir="$dir/grader"; mkdir -p "$grader_dir"
     (cd "$grader_dir" && claude -p --setting-sources project "You are grading one run of an agent skill. Judge only against the rubric. For each criterion give PASS or FAIL with one line of evidence quoted from the transcript or files. End with exactly one line: VERDICT: PASS or VERDICT: FAIL (FAIL if any criterion fails).
 
 <rubric>
@@ -95,6 +108,8 @@ $work
     grep -q "^VERDICT: PASS" "$dir/grade.md" || { result="FAIL"; note="rubric: see grade.md"; }
   fi
 
+  forget_sessions_in "$repo"
+  forget_sessions_in "$dir/grader"
   printf "%-28s r%-3s %s %s\n" "$name" "$rep" "$result" "$note" | tee -a "$OUT/results.txt"
 }
 

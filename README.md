@@ -66,7 +66,7 @@ evals/run.sh --root /tmp/skills-base ask-cache-grill
 git worktree remove /tmp/skills-base
 ```
 
-Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. Each run folder holds:
+Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. After each case, the runner deletes the state Claude Code keeps for the run and grader folders (`~/.claude/projects/…`, `/private/tmp/claude-<uid>/…`), so runs don't pile up there. Each run folder holds:
 - `repo/`: the fixture after the run
 - `transcript.jsonl` and `digest.txt`: what the agent did
 - `grade.md`: the grader's verdict
