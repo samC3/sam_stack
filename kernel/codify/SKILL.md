@@ -60,7 +60,7 @@ Removed: <redundant text deleted, or none>
 Status: applied | awaiting sign-off (proposed diff below)
 ```
 
-Candidates (`work/lessons/candidates.md`, long-lived and never deleted with a task):
+Candidates (`work/lessons/candidates.md`):
 
 ```markdown
 ## <the class of failure, in one line>

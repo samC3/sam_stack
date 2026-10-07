@@ -8,6 +8,9 @@ ROOT="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 errors=0
 err() { echo "  $1"; errors=$((errors + 1)); }
 
+# The kernel's State section is the registry of files skills write under work/.
+kernel_state="$(awk '/^## State/{s=1; next} s && /^## /{exit} s' "$ROOT/kernel/KERNEL.md" 2>/dev/null)"
+
 for f in "$ROOT"/kernel/*/SKILL.md "$ROOT"/workflows/*/SKILL.md; do
   [ -f "$f" ] || continue
   dir="$(basename "$(dirname "$f")")"
@@ -31,6 +34,13 @@ for f in "$ROOT"/kernel/*/SKILL.md "$ROOT"/workflows/*/SKILL.md; do
     kernel:verb|kernel:combinator|workflows:workflow) ;;
     *) err "layer '$layer' doesn't belong in $area/" ;;
   esac
+
+  if [ -n "$kernel_state" ]; then
+    for p in $(grep -E '^Output:' <<<"$contract" | grep -oE 'work/[^ ;,)]+\.md'); do
+      rel="${p#work/<slug>/}"
+      grep -qF "\`$rel\`" <<<"$kernel_state" || err "Output writes $p, which KERNEL.md's State section doesn't register"
+    done
+  fi
 
   ls -d "$ROOT"/evals/cases/"$dir"-*/ >/dev/null 2>&1 || err "no eval case in evals/cases/$dir-*/"
 done
