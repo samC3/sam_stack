@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Run evals.
-# Usage: evals/run.sh [--repeat N] [--jobs J] [--root DIR] [--cases] [name ...]
+# Usage: evals/run.sh [--repeat N] [--jobs J] [--root DIR] [task ...]
 #        evals/run.sh --graders [task ...]
-#   no names: every task in evals/tasks/ (--cases: every legacy case in evals/cases/)
+#   no names: every task in evals/tasks/
 #   --repeat N  trials per task (default 1); --jobs J parallel trials (default 4)
 #   --root DIR  take KERNEL.md and the skills from another checkout of this repo
 #               (e.g. `git worktree add` of HEAD) to compare a baseline
 #   --graders   free: test each task's checks against its reference solution
 #
-# A task is evals/tasks/<name>/ (a legacy case, evals/cases/<name>/, has the same files):
+# A task is evals/tasks/<name>/:
 #   task.md     what it covers and why: `Covers:`, `Kind: capability|regression`, `Turns: N`
 #   prompt.md   the first user message (required)
 #   user.md     a simulated user's hidden situation; makes the task multi-turn (optional)
@@ -16,7 +16,6 @@
 #   work/       task state copied into the run's $WORK, outside the repo (optional)
 #   setup.sh    run in the repo after the first commit (optional)
 #   checks.sh   named outcome checks: `check "<label>" <command ...>` (lib.sh helpers)
-#   check.sh    legacy: checks that stop at the first failure
 #   rubric.md   numbered dimensions, each graded PASS / FAIL / UNKNOWN by a model
 #   reference/apply.sh   produces a correct outcome in the repo, for --graders
 #
@@ -31,13 +30,11 @@ REPEAT=1
 SKILLS_ROOT="${SKILLS_ROOT:-$ROOT}"
 JOBS=4
 MODE=run
-SET=tasks
 while [ $# -gt 0 ]; do
   case "$1" in
     --repeat) REPEAT="$2"; shift 2 ;;
     --jobs) JOBS="$2"; shift 2 ;;
     --root) SKILLS_ROOT="$(cd "$2" && pwd)"; shift 2 ;;
-    --cases) SET=cases; shift ;;
     --graders) MODE=graders; shift ;;
     --one) ONE=1; shift ;;
     *) break ;;
@@ -45,9 +42,7 @@ while [ $# -gt 0 ]; do
 done
 
 src_of() {
-  if [ -d "$EVALS/tasks/$1" ]; then echo "$EVALS/tasks/$1"
-  elif [ -d "$EVALS/cases/$1" ]; then echo "$EVALS/cases/$1"
-  else echo "no task or case named '$1'" >&2; return 1; fi
+  [ -d "$EVALS/tasks/$1" ] && echo "$EVALS/tasks/$1" || { echo "no task named '$1'" >&2; return 1; }
 }
 
 digest() {
@@ -93,20 +88,15 @@ prepare() {
   done
   (cd "$repo" && git init -q && git add -A && git commit -qm "fixture")
   [ -f "$src/setup.sh" ] && (cd "$repo" && ROOT="$ROOT" bash "$src/setup.sh")
+  git -C "$repo" rev-parse HEAD > "$dir/base"
   return 0
 }
 
-# run_checks <src> <transcript> <out-file>: named checks (or legacy check.sh), one line each.
+# run_checks <src> <transcript> <out-file>: named outcome checks, one line each.
 run_checks() {
   local src="$1" transcript="$2" out="$3"
   : > "$out"
-  if [ -f "$src/checks.sh" ]; then
-    (cd "$repo" && TRANSCRIPT="$transcript" bash -c "source '$EVALS/lib.sh'; source '$src/checks.sh'") >> "$out" 2>&1
-  elif [ -f "$src/check.sh" ]; then
-    local note
-    if note="$(cd "$repo" && TRANSCRIPT="$transcript" bash -c "source '$EVALS/lib.sh'; source '$src/check.sh'" 2>&1)"
-    then echo "PASS legacy check.sh" >> "$out"; else echo "FAIL legacy check.sh: ${note#FAIL: }" >> "$out"; fi
-  fi
+  [ -f "$src/checks.sh" ] && (cd "$repo" && TRANSCRIPT="$transcript" bash -c "source '$EVALS/lib.sh'; source '$src/checks.sh'") >> "$out" 2>&1
   [ -e "$repo/work" ] && echo "FAIL task state stays out of the repo: repo has a work/ folder" >> "$out"
   return 0
 }
@@ -124,7 +114,10 @@ agent_turn() {
       --disallowedTools "AskUserQuestion" \
       > "$dir/turn-$n.jsonl" 2>> "$dir/stderr.log")
   cat "$dir/turn-$n.jsonl" >> "$dir/transcript.jsonl"
-  printf 'AGENT:\n%s\n\n' "$(jq -r 'select(.type=="result") | .result // empty' "$dir/turn-$n.jsonl" | tail -1)" >> "$dir/conversation.md"
+  # Everything the agent said this turn, not only its last text block: options
+  # and the question often arrive in separate blocks.
+  printf 'AGENT:\n%s\n\n' "$(jq -r 'select(.type=="assistant" and (.parent_tool_use_id // null) == null)
+    | .message.content[]? | select(.type=="text") | .text' "$dir/turn-$n.jsonl")" >> "$dir/conversation.md"
   jq -r 'select(.type=="result") | .session_id // empty' "$dir/turn-$n.jsonl" | tail -1
 }
 
@@ -143,12 +136,23 @@ $(cat "$dir/conversation.md")
 </conversation>") 2>> "$dir/stderr.log"
 }
 
+# outcome <dir>: what the run left behind, for the grader: the task state and the repo's changes.
+outcome() {
+  local dir="$1" f
+  (cd "$SAM_STACK_WORK" && find . -type f -exec sh -c 'echo "=== state: $1"; cat "$1"' _ {} \;)
+  echo "=== repo: git diff since setup"
+  git -C "$repo" diff "$(cat "$dir/base")"
+  git -C "$repo" ls-files --others --exclude-standard | grep -v '^\.claude/' | while read -r f; do
+    echo "=== repo: $f (new)"; head -200 "$repo/$f"
+  done
+}
+
 # grade <src> <dir>: one model grader, one line per rubric dimension.
 grade() {
-  local src="$1" dir="$2" work
-  work="$(cd "$SAM_STACK_WORK" && find . -type f -exec sh -c 'echo "=== $1"; cat "$1"' _ {} \;)"
+  local src="$1" dir="$2"
+  outcome "$dir" > "$dir/outcome.txt"
   mkdir -p "$dir/grader"
-  (cd "$dir/grader" && claude -p --setting-sources project "You are grading one run of an agent. Judge each numbered rubric dimension on its own, only from the transcript and files below. Use UNKNOWN when they don't show enough to decide; don't guess. Output exactly one line per dimension and nothing else, in this form:
+  (cd "$dir/grader" && claude -p --setting-sources project "You are grading one run of an agent. Judge each numbered rubric dimension on its own, only from the transcript and the outcome below. Use UNKNOWN when they don't show enough to decide; don't guess. Output exactly one line per dimension and nothing else, in this form:
 <n>: PASS|FAIL|UNKNOWN — <one line of evidence quoted from the transcript or files>
 
 <rubric>
@@ -159,9 +163,9 @@ $(cat "$src/rubric.md")
 $(cat "$dir/digest.txt")
 </transcript>
 
-<work-files>
-$work
-</work-files>") > "$dir/grade.md" 2>&1
+<outcome>
+$(cat "$dir/outcome.txt")
+</outcome>") > "$dir/grade.md" 2>&1
 }
 
 run_one() {
@@ -233,7 +237,7 @@ mkdir -p "$OUT"
 export OUT SKILLS_ROOT
 
 names=("$@")
-[ ${#names[@]} -eq 0 ] && names=($(ls "$EVALS/$SET"))
+[ ${#names[@]} -eq 0 ] && names=($(ls "$EVALS/tasks"))
 
 if [ "$MODE" = graders ]; then
   for n in "${names[@]}"; do graders_one "$n"; done

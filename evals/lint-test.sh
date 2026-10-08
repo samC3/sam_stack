@@ -2,7 +2,7 @@
 # Regression tests for evals/lint.sh. Free and deterministic.
 #
 # Each fixture is evals/lint-fixtures/<name>/: a miniature repo (kernel/,
-# workflows/, evals/cases/) plus an `expect` file. The first line of `expect`
+# workflows/, evals/tasks/) plus an `expect` file. The first line of `expect`
 # is either `ok` (lint must pass) or a string that must appear in lint's
 # output when it fails.
 set -uo pipefail

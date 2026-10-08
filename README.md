@@ -12,14 +12,14 @@ kernel/
   judge/SKILL.md     # is it good / which one → $WORK/<slug>/verdicts.md (J1…)
   codify/SKILL.md    # make a lesson structural → $WORK/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
 workflows/
-  make-skill/SKILL.md  # builds or regenerates a skill, plus its eval case, from the verbs
+  make-skill/SKILL.md  # builds or regenerates a skill, plus the eval task that covers it, from the verbs
   adversarial-review/SKILL.md  # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
 evals/
-  lint.sh            # free structural check of every skill and case
+  lint.sh            # free structural check of every skill and task
   lint-test.sh       # free regression tests for lint.sh, one per fixture in lint-fixtures/
-  run.sh             # eval runner
-  lib.sh             # helpers for check.sh files
-  cases/<name>/      # one directory per case
+  run.sh             # eval runner; --graders tests each task's checks for free
+  lib.sh             # helpers for a task's checks.sh
+  tasks/<name>/      # one directory per eval task
 ```
 
 ## Rules
@@ -55,13 +55,11 @@ evals/
 
 4. **Every skill follows the contract in `KERNEL.md`.** New skills are compositions of the kernel verbs. Add a new verb only when the kernel's admission rule allows it.
 
-5. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval case for it, then checks both with `evals/lint.sh`. It runs a paid eval only once per new case; anything beyond that, it asks you first.
+5. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval task that covers it (or extend an existing one), then checks both with `evals/lint.sh` and `evals/run.sh --graders`. It runs a paid eval only once per new task; anything beyond that, it asks you first.
 
 ## Evals
 
 Evals are a small set of **tasks**: realistic scenarios that run a workflow end to end, so each one exercises several skills at once. They're graded on the **outcome** (what ended up in the repo and in `$WORK`), not on which skills fired. This follows Anthropic's [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). Tasks run the real skills in headless Claude Code sessions, so **they spend real tokens.** Read [Spending](#spending) before running them.
-
-The older one-habit cases in `evals/cases/` are being replaced by tasks; they still run with `--cases`.
 
 ### Running
 
@@ -70,13 +68,12 @@ evals/lint.sh                             # free: structure of every skill and c
 evals/lint-test.sh                        # free: lint.sh still rejects what it should, and only that
 evals/run.sh --graders                    # free: each task's checks fail untouched and pass on its reference
 evals/run.sh                              # every task, once
-evals/run.sh review                       # named tasks (or legacy cases) only
+evals/run.sh review                       # named tasks only
 evals/run.sh --repeat 3 --jobs 6 plan
-evals/run.sh --cases                      # every legacy case
 
 # Baseline comparison: run against the skills as of HEAD
 git worktree add /tmp/skills-base HEAD
-evals/run.sh --root /tmp/skills-base ask-cache-grill
+evals/run.sh --root /tmp/skills-base plan
 git worktree remove /tmp/skills-base
 ```
 
@@ -100,8 +97,9 @@ Each case runs in a fresh git repo, set up the way a real repo would be:
 | `review` | A branch whose PR claims "done and tested" but misses one of three spec criteria | adversarial-review, ground, judge, prove, distill |
 | `plan` | "Add caching", in a repo whose README says 4 replicas while the deploy config says 6. A simulated user holds the preferences and leaves one point undecided | ground, ask, distill |
 | `make-skill` | Build a small workflow with every decision given, and be honest that the paid eval wasn't run | make-skill, ground, distill, prove |
+| `codify` | Three lessons at once: a reproducible lint gap (fix it in lint), one unreproduced failure (log a candidate, change nothing), and a rule for every skill (propose a kernel diff, wait for sign-off) | codify, prove |
 
-All three are `Kind: capability` until they pass reliably; then they become regression tasks.
+All four are `Kind: capability` until they pass reliably; then they become regression tasks.
 
 A task is `evals/tasks/<name>/`:
 
@@ -120,100 +118,42 @@ How a task should be built:
 - **Give every task a reference solution,** and run `--graders` before any paid run. A check that can't pass on a correct outcome is a broken task, not a weak agent.
 - **Make it multi-turn when the workflow asks the user things.** `user.md` gives the simulated user preferences, plus at least one point it hasn't decided, so you can see whether the agent keeps it open.
 - **Use the rubric only for what a script can't see,** one dimension per line. UNKNOWN counts as not passing, so a vague dimension shows up instead of passing silently.
+- **Every skill is covered by at least one task.** Lint checks the `Covers:` lines and rejects names that aren't skills.
 
-### Writing a case
+`setup.sh` and `reference/apply.sh` get `$ROOT` (this repo), and `$WORK` and `$SAM_STACK_WORK` (the run's task state). `checks.sh` runs in the run repo with `lib.sh` loaded: `check "<label>" <command ...>` records one named result, and `has <glob> <regex>` is the usual command. A run that creates a `work/` folder in the repo fails. The grader is a separate Claude session. It reads the rubric, a digest of the transcript, and the outcome: the run's task state, the repo's diff since setup, and any new files.
 
-```
-evals/cases/<name>/
-  prompt.md    # the user prompt (required)
-  fixture/     # files copied into the run repo (optional)
-  work/        # task state copied into the run's $WORK, outside the repo (optional)
-  setup.sh     # runs in the repo after the first commit, e.g. to add a commit to review (optional)
-  check.sh     # deterministic checks (optional)
-  rubric.md    # criteria for a grader model (optional)
-```
+### Results so far
 
-`setup.sh` gets `$ROOT`, the path of this repo, so it can copy tooling into the run repo. Each run has its own `$SAM_STACK_WORK`, and `setup.sh`, `check.sh` and the session all see it and `$WORK`. A run that creates a `work/` folder in the repo fails. `check.sh` runs first, with these helpers from `lib.sh` available:
-- `invoked <skill>`
-- `invoked_none`
-- `has <glob> <regex>`
-- `fail <msg>`
+First paid run, one trial each (about $2 for the agents, plus simulated-user and grader calls):
 
-The grader runs only if the checks pass. It's a separate Claude session that reads the rubric, a digest of the transcript and the files under the run's `$SAM_STACK_WORK`. It must end with `VERDICT: PASS` or `VERDICT: FAIL`.
+| Task | Checks | Rubric | What it showed |
+|---|---|---|---|
+| `review` | 6/7 | 4/4 | The review was right. The one failed check was an eval bug (too strict a pattern), since fixed |
+| `plan` | 5/5 | 3/5 | A harness bug: the simulated user saw only the agent's last text block, so it never saw the options. Since fixed. A real `distill` flaw too: after the cold read it filled gaps with values nobody chose (a 10 ms target) instead of marking them open |
+| `make-skill` | 5/5 | 3/4, 1 unknown | An eval bug: the grader couldn't see files in the repo. Since fixed: it now gets the repo's diff and new files |
 
-Put everything you can into `check.sh`. It's free and it doesn't vary between runs. Use the rubric only for things a script can't judge.
+Read the transcripts before trusting a score. Two of these three failures were in the evals, not the skills.
 
-A good case targets the specific failure a verb is prone to, and **must be able to fail.** A case that every reasonable version of the skill passes only guards against regressions.
+### Not built yet
 
-### Current cases
-
-These are a seed set: one case per verb's key habit, plus one negative trigger. Results so far are from 4 runs per case (one initial run, then 3 repeats), all before the `ask` fix:
-
-| Case | Tests that the verb… | Passes |
-|---|---|---|
-| `ground-config-override` | finds a production override (5 retries, not the default 3), cites it, and doesn't ask the user | 4/4 |
-| `ask-cache-grill` | reads the repo first, then asks exactly one question with a recommendation | 2/4 (follow-up questions; fixed in the skill, not yet re-run) |
-| `distill-open-gap` | keeps an open question open and invents no decisions | 3/4 |
-| `prove-red-first` | shows the check failing before the fix and passing after | 4/4 |
-| `judge-clean-diff` | reports no defects on a correct change and states criteria first | 3/4 |
-| `trigger-negative-rename` | doesn't fire any kernel verb for a plain rename | 4/4 |
-| `make-skill-honest-report` | writes a lint-clean workflow and an eval case without asking settled questions, and reports the behaviour eval as not run | 1/2 (the first run hit harness gaps that have since been fixed) |
-| `codify-strongest-level` | fixes a reproducible lint gap in lint, with a regression fixture, not with wording | 1/1 |
-| `codify-evidence-threshold` | logs a single 1-in-4 failure as a candidate and edits nothing | 1/1 |
-| `codify-kernel-signoff` | proposes a cross-skill KERNEL.md rule and waits for sign-off | 1/1 |
-
-The single failures for `distill` and `judge` could be noise from the skill or from the grader. Leave them unchanged unless they come back.
-
-### What these cases are and aren't good for
-
-The seed cases are **unit tests for one habit each**: cheap, easy to read, and good at catching regressions. Their limits:
-
-- **They're easy.** A toy repo with three files and one planted trap makes the right move obvious.
-- **They're single-turn.** Every case is one prompt in a fresh session. Many real failures happen later: the kernel drifting out of attention in a long session, after compaction, when verbs are chained, or when other installed skills compete for the same prompt.
-
-New effort should go into **cases mined from real sessions:**
-- a snapshot of a real repo at a commit,
-- the prompt that actually went wrong,
-- and checks for the failure you saw.
-
-A failure you've seen is worth more than one you imagine.
-
-**Language** matters little for these verbs, because they test habits rather than coding skill. The fixtures use Python because `python3` ships with macOS and a bare-`assert` test needs no dependencies. Language starts to matter for realistic cases:
-- `prove` choosing the strongest check: typed builds, real test runners, flaky tests.
-- `ground` finding its way through real conventions: config layering, monorepos, generated code.
-
-So write realistic cases in the stacks you actually work in.
-
-### What a gold-standard eval would add
-
-| | Seed cases | Gold standard |
-|---|---|---|
-| Source | Invented | Mined from real sessions, plus adversarial cases built to provoke a known failure |
-| Fixtures | 3–5 file toy repos | Real repos snapshotted at a commit, at realistic size with distractions |
-| Turns | One prompt, one turn | Multi-turn. A simulated user with hidden preferences answers `ask`. Sessions resume or compact partway through |
-| Comparison | Absolute pass/fail | Paired and blind: the new skill against the old one (or no skill) on the same cases. Report the improvement |
-| Repeats | 1–4 | Enough for a pass rate with a confidence range |
-| Grader | One unchecked Claude run | Deterministic where possible. The grader is checked against human-labelled good and bad transcripts so its accuracy is known |
-| Coverage | One habit per verb, one negative trigger | Should and shouldn't trigger for each verb, competition with other installed skills, chained verbs in workflows, cost and turns tracked |
-| Overfitting guard | None | A held-out set the skill text is never tuned against |
-
-The two that matter most are **paired comparison** and **checking the grader against human labels**. Without them, you can't tell whether a change helped or whether the grader is just noisy.
+- **More tasks.** `fix` (prove, later iterate), and a routing table of prompts that should and shouldn't trigger each skill. `codify` hasn't had a paid run yet.
+- **Tasks from real sessions.** Snapshot a real repo at a commit, with the prompt that went wrong. These beat invented scenarios.
+- **Grader calibration.** Mark a few grades right or wrong by hand, so the grader's accuracy is known.
+- **A held-out task** that skill wording is never tuned against.
+- **A cost column** in the results. The transcripts already record cost.
 
 ### Spending
 
-The agent under test costs about $0.10–0.20 per run. `distill` costs more because its cold-read step starts a subagent. Each graded run adds a grader session on top. The first 24 runs cost roughly $7.
+A task trial costs roughly $0.40–1 for the agent. A multi-turn task costs more: `plan` was about $1 over three turns. Each trial adds a grader call, and each turn of a multi-turn task adds a simulated-user call.
 
 Run an eval only when its result would change what you do:
 
 1. **Tier the runs.**
-   - After editing a skill: run that skill's cases once.
-   - Before committing a kernel change: run the full suite once.
-   - Repeat only the cases whose result is ambiguous.
-2. **Spend repeats where you're uncertain.** A case that has passed 4 out of 4 needs one run as a regression check. A case at 2 out of 4 is where repeats teach you something.
+   - After editing a task: `evals/run.sh --graders` (free).
+   - After editing a skill: run the tasks that cover it, once.
+   - Before committing a kernel change: run every task once.
+   - Repeat only the tasks whose result is ambiguous.
+2. **Spend repeats where you're uncertain.** A task that has passed 4 out of 4 needs one trial as a regression check. A task at 2 out of 4 is where repeats teach you something.
 3. **Stop when the answer is clear.** If the first 3 runs fail the same way, you don't need 5.
-4. **Use the cheapest check first.** Run `evals/lint.sh` before any paid run; it's free. Deterministic checks gate the grader, so push criteria into `check.sh` where you can.
+4. **Use the cheapest check first.** Run `evals/lint.sh` and `evals/run.sh --graders` before any paid run; both are free. Push criteria into `checks.sh` where you can, since checks are free and don't vary between runs.
 5. **Use a cheaper grader, but the real model under test.** The grader can run on a smaller model once it has been checked against human labels. The agent under test should be the model you actually use, or the results won't carry over.
-
-Not built yet:
-- a per-case cost column in the results (the transcripts already record cost),
-- a mode that runs only the cases for skills that have changed.

@@ -1,25 +1,7 @@
-# Helpers for case check.sh files. Run with cwd = the case's run directory.
-# $TRANSCRIPT is the stream-json transcript of the run.
-
-KERNEL_VERBS="ground ask distill prove judge"
+# Helpers for a task's checks.sh. Run with cwd = the run repo; $WORK and
+# $SAM_STACK_WORK point at the run's task state, $TRANSCRIPT at its transcript.
 
 fail() { echo "FAIL: $*"; exit 1; }
-
-# invoked <skill>: the session called the Skill tool for <skill>.
-invoked() {
-  jq -e --arg s "$1" 'select(.type=="assistant") | .message.content[]?
-    | select(.type=="tool_use" and .name=="Skill" and .input.skill==$s)' \
-    "$TRANSCRIPT" >/dev/null || fail "skill '$1' was not invoked"
-}
-
-# invoked_none: no kernel verb was invoked.
-invoked_none() {
-  for s in $KERNEL_VERBS; do
-    if jq -e --arg s "$s" 'select(.type=="assistant") | .message.content[]?
-      | select(.type=="tool_use" and .name=="Skill" and .input.skill==$s)' \
-      "$TRANSCRIPT" >/dev/null; then fail "skill '$s' was invoked"; fi
-  done
-}
 
 # has <file-glob> <extended-regex>: some file matching the glob contains the pattern.
 has() {

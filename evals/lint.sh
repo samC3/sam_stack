@@ -46,13 +46,24 @@ for f in "$ROOT"/kernel/*/SKILL.md "$ROOT"/workflows/*/SKILL.md; do
     done
   fi
 
-  ls -d "$ROOT"/evals/cases/"$dir"-*/ >/dev/null 2>&1 || err "no eval case in evals/cases/$dir-*/"
+  covers_re="^Covers:(.*[ ,])?$dir([ ,]|\$)"
+  grep -Eqs "$covers_re" "$ROOT"/evals/tasks/*/task.md || err "no eval task covers $dir (a Covers: line in evals/tasks/*/task.md)"
 done
 
-for c in "$ROOT"/evals/cases/*/; do
-  [ -d "$c" ] || continue
-  [ -f "$c/prompt.md" ] || { echo "${c#$ROOT/}"; err "case missing prompt.md"; }
-  [ -f "$c/check.sh" ] || [ -f "$c/rubric.md" ] || { echo "${c#$ROOT/}"; err "case has neither check.sh nor rubric.md"; }
+# Skills a task may cover: this repo's own, plus any installed in .claude/skills/.
+skills=" $(ls -d "$ROOT"/kernel/*/ "$ROOT"/workflows/*/ "$ROOT"/.claude/skills/*/ 2>/dev/null | xargs -n1 basename | sort -u | tr '\n' ' ')"
+for t in "$ROOT"/evals/tasks/*/; do
+  [ -d "$t" ] || continue
+  echo "${t#$ROOT/}"
+  [ -f "$t/prompt.md" ] || err "task missing prompt.md"
+  [ -f "$t/checks.sh" ] || [ -f "$t/rubric.md" ] || err "task has neither checks.sh nor rubric.md"
+  [ ! -f "$t/checks.sh" ] || [ -f "$t/reference/apply.sh" ] || err "task has checks.sh but no reference/apply.sh to test them against"
+  grep -Eq '^Kind: *(capability|regression)$' "$t/task.md" 2>/dev/null || err "task.md needs 'Kind: capability' or 'Kind: regression'"
+  covers="$(sed -n 's/^Covers: *//p' "$t/task.md" 2>/dev/null | tr ',' ' ')"
+  [ -n "$covers" ] || err "task.md needs a 'Covers:' line naming the skills it exercises"
+  for c in $covers; do
+    case "$skills" in *" $c "*) ;; *) err "Covers names '$c', which isn't a skill in kernel/, workflows/ or .claude/skills/" ;; esac
+  done
 done
 
 if [ "$errors" -eq 0 ]; then echo "lint: ok"; else echo "lint: $errors error(s)"; exit 1; fi
