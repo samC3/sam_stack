@@ -17,6 +17,6 @@ bash evals/lint.sh "$T" >/dev/null 2>&1 || fail "lint now rejects a tab followed
 bash evals/lint.sh . >/dev/null 2>&1 || fail "lint fails on the repo itself"
 
 { git diff --name-only "$R"; git ls-files --others --exclude-standard; } \
-  | grep -Ev '^(evals/lint\.sh|work/|KERNEL\.md|AGENTS\.md)' | grep -q . \
+  | grep -Ev '^(evals/lint\.sh|KERNEL\.md|AGENTS\.md)' | grep -q . \
   || fail "no regression check added beside the lint fix"
-has "work/*/lessons.md" "^## L[0-9]"
+has "$WORK/*/lessons.md" "^## L[0-9]"

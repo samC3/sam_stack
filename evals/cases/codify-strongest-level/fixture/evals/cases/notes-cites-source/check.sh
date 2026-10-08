@@ -1,1 +1,1 @@
-has "work/*/notes.md" "retry"
+has "$WORK/*/notes.md" "retry"

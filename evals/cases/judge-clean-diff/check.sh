@@ -1,3 +1,3 @@
 invoked judge
-has "work/*/verdicts.md" "^## J1"
-has "work/*/verdicts.md" "Criteria"
+has "$WORK/*/verdicts.md" "^## J1"
+has "$WORK/*/verdicts.md" "Criteria"

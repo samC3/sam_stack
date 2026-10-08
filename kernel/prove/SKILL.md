@@ -12,7 +12,7 @@ Turn a claim into an observation. A check that has never failed proves nothing.
 ```
 Layer:     verb
 Input:     claim; surface (the program, endpoint, UI or command where the claim must hold); slug
-Output:    entry P<n> appended to work/<slug>/proofs.md
+Output:    entry P<n> appended to $WORK/<slug>/proofs.md
 Stop:      a verdict (holds | fails | inconclusive) is recorded, backed by an observed result
 Returns:   the verdict in one line, plus the P id
 ```

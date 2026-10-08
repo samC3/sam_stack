@@ -8,8 +8,10 @@
 # Each case is evals/cases/<name>/ with:
 #   prompt.md   the user prompt (required)
 #   fixture/    files copied into a fresh git repo (optional)
+#   work/       task state copied into the run's $WORK, outside the repo (optional)
 #   setup.sh    run in the repo after the first commit (optional)
-#   check.sh    deterministic checks, sourced with lib.sh helpers (optional)
+#   check.sh    deterministic checks, sourced with lib.sh helpers (optional);
+#               $WORK and $SAM_STACK_WORK point at the run's state
 #   rubric.md   criteria for a grader model to judge the transcript (optional)
 #
 # The run repo gets the kernel the way a real repo does: KERNEL.md imported
@@ -61,8 +63,12 @@ run_case() {
   local name="$1" rep="$2" src="$EVALS/cases/$1" dir="$OUT/$1/r$2"
   mkdir -p "$dir/repo"
   local repo="$dir/repo"
+  # Per-run state folder; the project name is the repo's directory name.
+  export SAM_STACK_WORK="$dir/work" WORK="$dir/work/repo"
+  mkdir -p "$WORK"
 
   [ -d "$src/fixture" ] && cp -R "$src/fixture/." "$repo/"
+  [ -d "$src/work" ] && cp -R "$src/work/." "$WORK/"
   cp "$SKILLS_ROOT/kernel/KERNEL.md" "$repo/KERNEL.md"
   echo "@KERNEL.md" > "$repo/AGENTS.md"
   mkdir -p "$repo/.claude/skills"
@@ -76,21 +82,22 @@ run_case() {
       --setting-sources project \
       --output-format stream-json --verbose \
       --permission-mode acceptEdits \
-      --add-dir "$SKILLS_ROOT/kernel" --add-dir "$SKILLS_ROOT/workflows" \
+      --add-dir "$SKILLS_ROOT/kernel" --add-dir "$SKILLS_ROOT/workflows" --add-dir "$SAM_STACK_WORK" \
       --allowedTools "Bash(git:*) Bash(python3:*) Bash(ls:*) Bash(cat:*) Bash(mkdir:*) Bash(grep:*) Bash(find:*) Bash(chmod:*) Bash(bash:*) Bash(sh:*) Bash(evals/:*)" \
       --disallowedTools "AskUserQuestion" \
       > "$dir/transcript.jsonl" 2> "$dir/stderr.log")
   digest "$dir/transcript.jsonl" > "$dir/digest.txt"
 
   local result="PASS" note=""
-  if [ -f "$src/check.sh" ]; then
+  [ -e "$repo/work" ] && { result="FAIL"; note="task state written to the repo's work/ instead of \$WORK"; }
+  if [ "$result" = "PASS" ] && [ -f "$src/check.sh" ]; then
     note="$(cd "$repo" && TRANSCRIPT="$dir/transcript.jsonl" bash -c "source '$EVALS/lib.sh'; source '$src/check.sh'" 2>&1)" \
       || result="FAIL"
   fi
 
   if [ "$result" = "PASS" ] && [ -f "$src/rubric.md" ]; then
     local work=""
-    [ -d "$repo/work" ] && work="$(cd "$repo" && find work -type f -exec sh -c 'echo "=== $1"; cat "$1"' _ {} \;)"
+    work="$(cd "$SAM_STACK_WORK" && find . -type f -exec sh -c 'echo "=== $1"; cat "$1"' _ {} \;)"
     local grader_dir="$dir/grader"; mkdir -p "$grader_dir"
     (cd "$grader_dir" && claude -p --setting-sources project "You are grading one run of an agent skill. Judge only against the rubric. For each criterion give PASS or FAIL with one line of evidence quoted from the transcript or files. End with exactly one line: VERDICT: PASS or VERDICT: FAIL (FAIL if any criterion fails).
 

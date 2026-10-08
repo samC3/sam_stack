@@ -8,7 +8,7 @@ ROOT="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 errors=0
 err() { echo "  $1"; errors=$((errors + 1)); }
 
-# The kernel's State section is the registry of files skills write under work/.
+# The kernel's State section is the registry of files skills write under $WORK/ and $SAM_STACK_WORK/.
 kernel_state="$(awk '/^## State/{s=1; next} s && /^## /{exit} s' "$ROOT/kernel/KERNEL.md" 2>/dev/null)"
 
 for f in "$ROOT"/kernel/*/SKILL.md "$ROOT"/workflows/*/SKILL.md; do
@@ -35,9 +35,13 @@ for f in "$ROOT"/kernel/*/SKILL.md "$ROOT"/workflows/*/SKILL.md; do
     *) err "layer '$layer' doesn't belong in $area/" ;;
   esac
 
+  # Task state lives under $WORK/ (KERNEL.md State), never in the project repo.
+  repo_work="$(grep -nE '(^|[^[:alnum:]_/.$-])work/' "$f" | head -1)"
+  [ -z "$repo_work" ] || err "line ${repo_work%%:*} names a repo-relative work/ path; task state lives under \$WORK/ (KERNEL.md State)"
+
   if [ -n "$kernel_state" ]; then
-    for p in $(grep -E '^Output:' <<<"$contract" | grep -oE 'work/[^ ;,)]+\.md'); do
-      rel="${p#work/<slug>/}"
+    for p in $(grep -E '^Output:' <<<"$contract" | grep -oE '\$(WORK|SAM_STACK_WORK)/[^ ;,)]+\.md'); do
+      rel="${p#\$WORK/<slug>/}"
       grep -qF "\`$rel\`" <<<"$kernel_state" || err "Output writes $p, which KERNEL.md's State section doesn't register"
     done
   fi

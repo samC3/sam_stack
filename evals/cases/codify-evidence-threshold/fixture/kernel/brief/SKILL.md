@@ -10,7 +10,7 @@ description: Write a one-page brief for a stakeholder from the decisions and fin
 ```
 Layer:     verb
 Input:     reader; slug
-Output:    work/<slug>/brief.md
+Output:    $WORK/<slug>/brief.md
 Stop:      every section cites a decision or finding id, or is marked open
 Returns:   the path
 ```

@@ -36,11 +36,12 @@ A skill with no stop condition is not finished.
 
 Skills communicate through files, not conversation memory, so work survives sessions, subagents and handoffs.
 
-- Work lives in `work/<slug>/` at the repo root and is **committed** with the branch it belongs to. That way a worktree or another session on the branch already has it, and reviewers see the reasoning beside the change. With no repo, use `~/.claude/work/<slug>/`.
-- The slug is kebab-case from the task. Reuse an existing directory when the task matches it.
-- One slug belongs to one branch. If two branches must share a slug, renumber the incoming entries when merging so ids stay unique.
-- The change that finishes the task deletes `work/<slug>/`; git history keeps the record. The exception is `work/lessons/`, which is shared across tasks and never deleted. `lessons` is never used as a task slug.
-- Each verb appends to its own log, one entry per heading, with a stable id. This table is the registry: every file a skill's contract writes under `work/` is listed here, and `evals/lint.sh` rejects any that isn't.
+- State lives outside the project repo, in one folder per machine: `$SAM_STACK_WORK` (set in `~/.claude/settings.json` `env`; if unset, `~/.sam_stack/work`). Never commit it to the project.
+- `$WORK` is `$SAM_STACK_WORK/<project>`. `<project>` is the name of the repo's main checkout, `basename "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`, so every worktree and session of one repo resolves the same folder. With no repo, `$WORK` is `$SAM_STACK_WORK/_global`.
+- A task's state is `$WORK/<slug>/`. The slug is kebab-case from the task. Reuse an existing directory when the task matches it.
+- When the task is finished, move `$WORK/<slug>/` to `$WORK/_archive/<slug>/`.
+- `$SAM_STACK_WORK/lessons/` is shared across all projects and never archived. Names starting with `_`, and `lessons`, are reserved: never a slug.
+- Each verb appends to its own log, one entry per heading, with a stable id. This table is the registry: every file a skill's contract writes under `$WORK/<slug>/` or `$SAM_STACK_WORK/` is listed here, and `evals/lint.sh` rejects any that isn't, and any repo-relative `work/` path.
 
 | File | Written by | Id |
 |---|---|---|
@@ -50,7 +51,7 @@ Skills communicate through files, not conversation memory, so work survives sess
 | `verdicts.md` | judge | `J1`, … |
 | `<format>.md` (`spec.md`, `handoff.md`, …), `tickets/NN-<name>.md` | distill | — |
 | `lessons.md` | codify | `L1`, … |
-| `work/lessons/candidates.md` | codify | — (shared across tasks, never deleted) |
+| `$SAM_STACK_WORK/lessons/candidates.md` | codify | — (shared across projects, never archived) |
 
 - Logs are append-only. To revise an entry, add a new one that says `supersedes F3`.
 - Refer to entries by id instead of restating them.

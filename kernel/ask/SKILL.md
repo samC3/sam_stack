@@ -12,7 +12,7 @@ Remove uncertainty about intent. Facts are `ground`'s job; ask covers what only 
 ```
 Layer:     verb
 Input:     topic; slug (existing decisions.md and findings.md are read first)
-Output:    entries D<n> (decided) and O<n> (left open) appended to work/<slug>/decisions.md
+Output:    entries D<n> (decided) and O<n> (left open) appended to $WORK/<slug>/decisions.md
 Stop:      no open branch would change what gets built, or the human says stop
 Returns:   decisions made, items left open with your default for each
 ```

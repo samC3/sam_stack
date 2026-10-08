@@ -12,7 +12,7 @@ Turn state into something a named reader can act on without the conversation.
 ```
 Layer:     verb
 Input:     reader (who they are, what they already know, what they will do next); format; source ids or "this conversation"; slug
-Output:    work/<slug>/<format>.md (tickets: work/<slug>/tickets/NN-<name>.md; skill: kernel/<name>/SKILL.md for a verb or combinator, workflows/<name>/SKILL.md for a workflow; eval-case: evals/cases/<name>-<habit>/)
+Output:    $WORK/<slug>/<format>.md (tickets: $WORK/<slug>/tickets/NN-<name>.md; skill: kernel/<name>/SKILL.md for a verb or combinator, workflows/<name>/SKILL.md for a workflow; eval-case: evals/cases/<name>-<habit>/)
 Stop:      a cold reader, given only the artifact, states the intended next action and has no questions the sources already answer
 Returns:   the path, plus any gaps marked as open questions
 ```

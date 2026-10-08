@@ -10,7 +10,7 @@ description: A minimal verb used only as a lint fixture, long enough to route on
 ```
 Layer:     verb
 Input:     a question
-Output:    work/<slug>/sample.md
+Output:    $WORK/<slug>/sample.md
 Stop:	
 Returns:   the answer
 ```

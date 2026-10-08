@@ -12,7 +12,7 @@ The workflow that builds skills, including itself. It is wiring only: how to ask
 ```
 Layer:     workflow
 Input:     the need (what keeps happening, or what should be automated), or the path of an existing skill to regenerate; slug (default make-skill-<name>)
-Output:    kernel/<name>/SKILL.md or workflows/<name>/SKILL.md; at least one case in evals/cases/<name>-<habit>/; logs in work/<slug>/
+Output:    kernel/<name>/SKILL.md or workflows/<name>/SKILL.md; at least one case in evals/cases/<name>-<habit>/; logs in $WORK/<slug>/
 Stop:      evals/lint.sh passes and the behaviour eval has a recorded verdict (or is recorded as not run, with the reason). When regenerating, judge has chosen between the old and new versions.
 Returns:   the paths written, the eval verdicts with their cost, and any open questions
 ```

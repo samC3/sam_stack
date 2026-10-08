@@ -12,14 +12,14 @@ Make a lesson stop depending on anyone remembering it. A rule nobody checks is a
 ```
 Layer:     verb
 Input:     lesson (one line: what happened, and what should happen instead); evidence (F/P/J ids, transcript or eval-run paths, commit shas); slug (default codify-<class>)
-Output:    the edit at the chosen level, plus entry L<n> appended to work/<slug>/lessons.md; or, below the evidence bar, an entry appended to work/lessons/candidates.md
+Output:    the edit at the chosen level, plus entry L<n> appended to $WORK/<slug>/lessons.md; or, below the evidence bar, an entry appended to $SAM_STACK_WORK/lessons/candidates.md
 Stop:      one of: an L entry is recorded whose regression check was seen failing on the incident and passing after the edit; the lesson is logged as a candidate; or a proposed edit is recorded as awaiting sign-off
 Returns:   the L id (or "candidate"), the level chosen, files changed, and anything awaiting the user's sign-off
 ```
 
 ## Procedure
 
-1. **Check the evidence bar.** Read `work/lessons/candidates.md` first: a matching candidate plus this incident makes two. Act only on two or more independent incidents (different runs or sessions), or on one incident that a script or command you can run reproduces the same way every time. Below the bar, append a candidate entry (create the file if needed) and stop. Change nothing else.
+1. **Check the evidence bar.** Read `$SAM_STACK_WORK/lessons/candidates.md` first: a matching candidate plus this incident makes two. Act only on two or more independent incidents (different runs or sessions), or on one incident that a script or command you can run reproduces the same way every time. Below the bar, append a candidate entry (create the file if needed) and stop. Change nothing else.
 2. **Name the class.** State the failure so a reader who never saw the incident would recognise it. Leave out the incident's names, numbers and phrasing.
    - If the lesson comes from a failing check, decide whether the behaviour or the check is wrong: `judge` with stance `choose`. Loosening a check is a weakening (step 6).
    - If the fix depends on intent (who owns a trigger phrase, which trade-off wins), hand that part to `ask`.
@@ -60,7 +60,7 @@ Removed: <redundant text deleted, or none>
 Status: applied | awaiting sign-off (proposed diff below)
 ```
 
-Candidates (`work/lessons/candidates.md`):
+Candidates (`$SAM_STACK_WORK/lessons/candidates.md`):
 
 ```markdown
 ## <the class of failure, in one line>

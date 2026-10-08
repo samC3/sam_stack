@@ -5,7 +5,7 @@
 | File | Written by | Id |
 |---|---|---|
 | `notes.md` | sample | `N1`, … |
-| `work/shared/index.md` | sample | — |
+| `$SAM_STACK_WORK/shared/index.md` | sample | — |
 
 ## Evidence
 

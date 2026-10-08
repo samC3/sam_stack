@@ -5,12 +5,12 @@ A small set of composable agent skills, built up from an atomic core.
 ```
 kernel/
   KERNEL.md          # rules every skill obeys: layers, skill contract, state, evidence, principles
-  ground/SKILL.md    # what's true        → work/<slug>/findings.md   (F1…)
-  ask/SKILL.md       # what the human wants → work/<slug>/decisions.md (D1…, O1…)
+  ground/SKILL.md    # what's true        → $WORK/<slug>/findings.md   (F1…)
+  ask/SKILL.md       # what the human wants → $WORK/<slug>/decisions.md (D1…, O1…)
   distill/SKILL.md   # write it down for a named reader
-  prove/SKILL.md     # does it work       → work/<slug>/proofs.md     (P1…)
-  judge/SKILL.md     # is it good / which one → work/<slug>/verdicts.md (J1…)
-  codify/SKILL.md    # make a lesson structural → work/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
+  prove/SKILL.md     # does it work       → $WORK/<slug>/proofs.md     (P1…)
+  judge/SKILL.md     # is it good / which one → $WORK/<slug>/verdicts.md (J1…)
+  codify/SKILL.md    # make a lesson structural → $WORK/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus its eval case, from the verbs
   adversarial-review/SKILL.md  # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
@@ -44,9 +44,18 @@ evals/
    done
    ```
 
-3. **Every skill follows the contract in `KERNEL.md`.** New skills are compositions of the kernel verbs. Add a new verb only when the kernel's admission rule allows it.
+3. **Set where state lives, once per machine.** Skills keep task state outside your repos, in `$SAM_STACK_WORK` (default `~/.sam_stack/work`), so every session and worktree finds it the same way:
 
-4. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval case for it, then checks both with `evals/lint.sh`. It runs a paid eval only once per new case; anything beyond that, it asks you first.
+   ```json
+   // ~/.claude/settings.json
+   { "env": { "SAM_STACK_WORK": "/Users/you/.sam_stack/work" } }
+   ```
+
+   Layout: `<project>/<slug>/` for a task, `<project>/_archive/<slug>/` once finished, `_global/<slug>/` outside a repo, `lessons/candidates.md` across projects. `KERNEL.md`'s State section has the rules.
+
+4. **Every skill follows the contract in `KERNEL.md`.** New skills are compositions of the kernel verbs. Add a new verb only when the kernel's admission rule allows it.
+
+5. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval case for it, then checks both with `evals/lint.sh`. It runs a paid eval only once per new case; anything beyond that, it asks you first.
 
 ## Evals
 
@@ -69,6 +78,7 @@ git worktree remove /tmp/skills-base
 
 Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. After each case, the runner deletes the state Claude Code keeps for the run and grader folders (`~/.claude/projects/…`, `/private/tmp/claude-<uid>/…`), so runs don't pile up there. Each run folder holds:
 - `repo/`: the fixture after the run
+- `work/`: the run's `$SAM_STACK_WORK`, with the task state under `work/repo/`
 - `transcript.jsonl` and `digest.txt`: what the agent did
 - `grade.md`: the grader's verdict
 
@@ -85,18 +95,19 @@ Each case runs in a fresh git repo, set up the way a real repo would be:
 evals/cases/<name>/
   prompt.md    # the user prompt (required)
   fixture/     # files copied into the run repo (optional)
+  work/        # task state copied into the run's $WORK, outside the repo (optional)
   setup.sh     # runs in the repo after the first commit, e.g. to add a commit to review (optional)
   check.sh     # deterministic checks (optional)
   rubric.md    # criteria for a grader model (optional)
 ```
 
-`setup.sh` gets `$ROOT`, the path of this repo, so it can copy tooling into the run repo. `check.sh` runs first, with these helpers from `lib.sh` available:
+`setup.sh` gets `$ROOT`, the path of this repo, so it can copy tooling into the run repo. Each run has its own `$SAM_STACK_WORK`, and `setup.sh`, `check.sh` and the session all see it and `$WORK`. A run that creates a `work/` folder in the repo fails. `check.sh` runs first, with these helpers from `lib.sh` available:
 - `invoked <skill>`
 - `invoked_none`
 - `has <glob> <regex>`
 - `fail <msg>`
 
-The grader runs only if the checks pass. It's a separate Claude session that reads the rubric, a digest of the transcript and the files under `work/`. It must end with `VERDICT: PASS` or `VERDICT: FAIL`.
+The grader runs only if the checks pass. It's a separate Claude session that reads the rubric, a digest of the transcript and the files under the run's `$SAM_STACK_WORK`. It must end with `VERDICT: PASS` or `VERDICT: FAIL`.
 
 Put everything you can into `check.sh`. It's free and it doesn't vary between runs. Use the rubric only for things a script can't judge.
 

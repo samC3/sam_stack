@@ -1,1 +1,1 @@
-Output writes work/<slug>/notes.md, which KERNEL.md's State section doesn't register
+Output writes $WORK/<slug>/notes.md, which KERNEL.md's State section doesn't register

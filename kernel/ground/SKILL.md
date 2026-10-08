@@ -12,7 +12,7 @@ Find out what is true. Not what is likely, and not what was true last time.
 ```
 Layer:     verb
 Input:     question; optional source scope (code | history | docs | runtime | transcripts | web); slug
-Output:    entry F<n> appended to work/<slug>/findings.md
+Output:    entry F<n> appended to $WORK/<slug>/findings.md
 Stop:      every load-bearing part of the answer has at least one fact, or the question is declared unanswerable with what was checked
 Returns:   the answer in 1–3 lines, plus the F id
 ```

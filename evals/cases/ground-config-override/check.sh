@@ -1,3 +1,3 @@
 invoked ground
-has "work/*/findings.md" "^## F1"
-has "work/*/findings.md" "\[fact: "
+has "$WORK/*/findings.md" "^## F1"
+has "$WORK/*/findings.md" "\[fact: "
