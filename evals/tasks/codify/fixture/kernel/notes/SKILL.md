@@ -7,7 +7,7 @@ description: Keep a running list of what was learned during a task, each item wi
 
 ## Contract
 
-```
+```contract
 Layer:     verb
 Input:     the item to note; slug
 Output:    an entry appended to $WORK/<slug>/notes.md

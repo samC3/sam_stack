@@ -9,7 +9,7 @@ Make a call that can't be settled by running something, and make it defensible.
 
 ## Contract
 
-```
+```contract
 Layer:     verb
 Input:     subject(s); stance (find-defects | choose | rank); criteria (given, or derived in step 1); slug
 Output:    entry J<n> appended to $WORK/<slug>/verdicts.md

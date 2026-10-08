@@ -7,7 +7,7 @@ description: Write a one-page brief for a stakeholder from the decisions and fin
 
 ## Contract
 
-```
+```contract
 Layer:     verb
 Input:     reader; slug
 Output:    $WORK/<slug>/brief.md

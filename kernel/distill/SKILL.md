@@ -9,7 +9,7 @@ Turn state into something a named reader can act on without the conversation.
 
 ## Contract
 
-```
+```contract
 Layer:     verb
 Input:     reader (who they are, what they already know, what they will do next); format; source ids or "this conversation"; slug
 Output:    $WORK/<slug>/<format>.md (tickets: $WORK/<slug>/tickets/NN-<name>.md; skill: kernel/<name>/SKILL.md for a verb or combinator, workflows/<name>/SKILL.md for a workflow; eval-task: evals/tasks/<name>/)
@@ -27,7 +27,7 @@ Returns:   the path, plus any gaps marked as open questions
 | `pr` | What changed and why · How it was proved (`P` ids) · Risk · Where the reviewer should look |
 | `summary` | Answer first, then support, then open questions |
 | `skill` | Frontmatter + `## Contract` per KERNEL.md, then Procedure, entry format if it writes a log, and Rules |
-| `eval-task` | A realistic scenario that runs a whole workflow, graded on its outcome. `task.md` with `Covers:` (the skills it exercises), `Kind: capability` or `regression`, and `Turns:` · `prompt.md`, a request that invites the habit's typical failure · `fixture/`, plus `user.md` (a simulated user's hidden situation) when the workflow asks the user things · `checks.sh`, named checks on the outcome (files, verdicts, git state), never on which skills fired · `rubric.md` only for what a script can't see, one dimension per line · `reference/apply.sh`, a correct outcome. The checks must fail on the untouched fixture and pass on the reference (`evals/run.sh --graders`) |
+| `eval-task` | A realistic scenario that runs a whole workflow, graded on its outcome. `task.md` with frontmatter `covers:` (the skills it exercises) and `turns:` · `prompt.md`, a request that invites the habit's typical failure · `fixture/`, plus `user.md` (a simulated user's hidden situation) when the workflow asks the user things · `checks.sh`, named checks on the outcome (files, verdicts, git state), never on which skills fired · `rubric.md` only for what a script can't see, one dimension per line · `reference/apply.sh`, a correct outcome. The checks must fail on the untouched fixture and pass on the reference (`evals/run.py --graders`) |
 
 Any other format is allowed. Define its shape from the reader's next action before you draft.
 

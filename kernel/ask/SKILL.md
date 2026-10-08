@@ -9,7 +9,7 @@ Remove uncertainty about intent. Facts are `ground`'s job; ask covers what only 
 
 ## Contract
 
-```
+```contract
 Layer:     verb
 Input:     topic; slug (existing decisions.md and findings.md are read first)
 Output:    entries D<n> (decided) and O<n> (left open) appended to $WORK/<slug>/decisions.md

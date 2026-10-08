@@ -9,7 +9,7 @@ Wiring for a cold review: what the work was meant to do, whether it does it, and
 
 ## Contract
 
-```
+```contract
 Layer:     workflow
 Input:     subject (PR number, branch, or commit range; default: current branch against the default branch); goals (optional; otherwise grounded); slug (default: review-<branch>)
 Output:    $WORK/<slug>/findings.md, proofs.md, verdicts.md entries; distill's $WORK/<slug>/<format>.md with format review

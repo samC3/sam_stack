@@ -15,9 +15,10 @@ workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus the eval task that covers it, from the verbs
   adversarial-review/SKILL.md  # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
 evals/
-  lint.sh            # free structural check of every skill and task
-  lint-test.sh       # free regression tests for lint.sh, one per fixture in lint-fixtures/
-  run.sh             # eval runner; --graders tests each task's checks for free
+  lint.py            # free structural check of every skill, task and the registry
+  lint_test.py       # its tests: one row per rule, each with a near-miss that must pass
+  run.py             # eval runner; --graders tests each task's checks for free
+  prompts/           # the grader's and the simulated user's prompts
   lib.sh             # helpers for a task's checks.sh
   tasks/<name>/      # one directory per eval task
 ```
@@ -55,7 +56,7 @@ evals/
 
 4. **Every skill follows the contract in `KERNEL.md`.** New skills are compositions of the kernel verbs. Add a new verb only when the kernel's admission rule allows it.
 
-5. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval task that covers it (or extend an existing one), then checks both with `evals/lint.sh` and `evals/run.sh --graders`. It runs a paid eval only once per new task; anything beyond that, it asks you first.
+5. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval task that covers it (or extend an existing one), then checks both with `evals/lint.py` and `evals/run.py --graders`. It runs a paid eval only once per new task; anything beyond that, it asks you first.
 
 ## Evals
 
@@ -64,20 +65,20 @@ Evals are a small set of **tasks**: realistic scenarios that run a workflow end 
 ### Running
 
 ```sh
-evals/lint.sh                             # free: structure of every skill and case
-evals/lint-test.sh                        # free: lint.sh still rejects what it should, and only that
-evals/run.sh --graders                    # free: each task's checks fail untouched and pass on its reference
-evals/run.sh                              # every task, once
-evals/run.sh review                       # named tasks only
-evals/run.sh --repeat 3 --jobs 6 plan
+evals/lint.py                             # free: structure of every skill and task
+evals/lint_test.py                        # free: lint.py still rejects what it should, and only that
+evals/run.py --graders                    # free: each task's checks fail untouched and pass on its reference
+evals/run.py                              # every task, once
+evals/run.py review                       # named tasks only
+evals/run.py --repeat 3 --jobs 6 plan
 
 # Baseline comparison: run against the skills as of HEAD
 git worktree add /tmp/skills-base HEAD
-evals/run.sh --root /tmp/skills-base plan
+evals/run.py --root /tmp/skills-base plan
 git worktree remove /tmp/skills-base
 ```
 
-Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. After each case, the runner deletes the state Claude Code keeps for the run and grader folders (`~/.claude/projects/…`, `/private/tmp/claude-<uid>/…`), so runs don't pile up there. Each run folder holds:
+Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<task>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. After each trial, the runner deletes the state Claude Code keeps for the run, grader and simulated-user folders (`~/.claude/projects/…`, `/private/tmp/claude-<uid>/…`), so runs don't pile up there. Each run folder holds:
 - `repo/`: the fixture after the run
 - `work/`: the run's `$SAM_STACK_WORK`, with the task state under `work/repo/`
 - `transcript.jsonl`, `digest.txt` and `conversation.md`: what the agent did and said, turn by turn
@@ -85,7 +86,7 @@ Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<case>/r<n>/` (over
 
 Each trial prints a line like `plan  r1  FAIL  checks 4/5  rubric 4/5  turns 6`, with each failed check and each failed or UNKNOWN rubric dimension listed under it. That gives partial credit and shows which part of the workflow broke. A trial passes only if every check and every dimension passes. The script ends with passing trials per task, and exits non-zero if any trial failed. **Read the transcripts** of new or failing tasks: a grader's verdict isn't trustworthy until you've checked a few by hand.
 
-Each case runs in a fresh git repo, set up the way a real repo would be:
+Each trial runs in a fresh git repo, set up the way a real repo would be:
 - `KERNEL.md` is imported from `AGENTS.md` with a relative path. Imports from outside the project don't load in headless runs.
 - Each skill in `kernel/` and `workflows/` (or the `--root` checkout) is linked into `.claude/skills/`.
 - Only project settings load (`--setting-sources project`), so your user-level skills and memory don't interfere.
@@ -99,12 +100,10 @@ Each case runs in a fresh git repo, set up the way a real repo would be:
 | `make-skill` | Build a small workflow with every decision given, and be honest that the paid eval wasn't run | make-skill, ground, distill, prove |
 | `codify` | Three lessons at once: a reproducible lint gap (fix it in lint), one unreproduced failure (log a candidate, change nothing), and a rule for every skill (propose a kernel diff, wait for sign-off) | codify, prove |
 
-All four are `Kind: capability` until they pass reliably; then they become regression tasks.
-
 A task is `evals/tasks/<name>/`:
 
 ```
-task.md              # what it's for; Covers: <skills>; Kind: capability | regression; Turns: <max>
+task.md              # frontmatter (covers: <skills>, turns: <max>), then what it's for
 prompt.md            # the first user message
 user.md              # optional: a simulated user's hidden situation, which makes the task multi-turn
 fixture/  work/  setup.sh   # the repo, the task state in $WORK, and setup after the first commit
@@ -118,7 +117,7 @@ How a task should be built:
 - **Give every task a reference solution,** and run `--graders` before any paid run. A check that can't pass on a correct outcome is a broken task, not a weak agent.
 - **Make it multi-turn when the workflow asks the user things.** `user.md` gives the simulated user preferences, plus at least one point it hasn't decided, so you can see whether the agent keeps it open.
 - **Use the rubric only for what a script can't see,** one dimension per line. UNKNOWN counts as not passing, so a vague dimension shows up instead of passing silently.
-- **Every skill is covered by at least one task.** Lint checks the `Covers:` lines and rejects names that aren't skills.
+- **Every skill is covered by at least one task.** Lint checks each task's `covers:` and rejects names that aren't skills.
 
 `setup.sh` and `reference/apply.sh` get `$ROOT` (this repo), and `$WORK` and `$SAM_STACK_WORK` (the run's task state). `checks.sh` runs in the run repo with `lib.sh` loaded: `check "<label>" <command ...>` records one named result, and `has <glob> <regex>` is the usual command. A run that creates a `work/` folder in the repo fails. The grader is a separate Claude session. It reads the rubric, a digest of the transcript, and the outcome: the run's task state, the repo's diff since setup, and any new files.
 
@@ -149,11 +148,11 @@ A task trial costs roughly $0.40–1 for the agent. A multi-turn task costs more
 Run an eval only when its result would change what you do:
 
 1. **Tier the runs.**
-   - After editing a task: `evals/run.sh --graders` (free).
+   - After editing a task: `evals/run.py --graders` (free).
    - After editing a skill: run the tasks that cover it, once.
    - Before committing a kernel change: run every task once.
    - Repeat only the tasks whose result is ambiguous.
 2. **Spend repeats where you're uncertain.** A task that has passed 4 out of 4 needs one trial as a regression check. A task at 2 out of 4 is where repeats teach you something.
 3. **Stop when the answer is clear.** If the first 3 runs fail the same way, you don't need 5.
-4. **Use the cheapest check first.** Run `evals/lint.sh` and `evals/run.sh --graders` before any paid run; both are free. Push criteria into `checks.sh` where you can, since checks are free and don't vary between runs.
+4. **Use the cheapest check first.** Run `evals/lint.py` and `evals/run.py --graders` before any paid run; both are free. Push criteria into `checks.sh` where you can, since checks are free and don't vary between runs.
 5. **Use a cheaper grader, but the real model under test.** The grader can run on a smaller model once it has been checked against human labels. The agent under test should be the model you actually use, or the results won't carry over.

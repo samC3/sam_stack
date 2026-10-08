@@ -4,12 +4,18 @@ Rules every skill in this stack obeys.
 
 ## Layers
 
-- Verbs live in `kernel/<name>/`. Every skill is covered by at least one eval task: a `Covers:` line in `evals/tasks/<name>/task.md` names it.
+- Verbs live in `kernel/<name>/`. Every skill is covered by at least one eval task: the `covers:` field in `evals/tasks/<name>/task.md` names it.
 - Only `codify` edits this kernel, and only with the user's sign-off.
 
 ## Log entries
 
-Each verb appends entries to its own log under `$WORK/<slug>/`, one per heading, with a stable id.
+Each verb appends entries to its own log under `$WORK/<slug>/`, one per heading, with a stable id. The registry lists every such file:
+
+```registry
+# file          writer   ids
+notes.md        notes    —
+brief.md        brief    —
+```
 
 ## Principles
 

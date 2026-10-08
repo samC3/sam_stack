@@ -1,4 +1,4 @@
-# A correct make-skill outcome, used by `evals/run.sh --graders`.
+# A correct make-skill outcome, used by `evals/run.py --graders`.
 mkdir -p workflows/investigate evals/tasks/investigate/reference "$WORK/make-skill-investigate"
 cat > workflows/investigate/SKILL.md <<'MD'
 ---
@@ -10,7 +10,7 @@ description: Answer a question about the codebase without changing it, by ground
 
 ## Contract
 
-```
+```contract
 Layer:     workflow
 Input:     the question; slug
 Output:    $WORK/<slug>/findings.md and $WORK/<slug>/summary.md
@@ -23,7 +23,7 @@ Returns:   the summary
 1. `ground` the question.
 2. `distill` a `summary` for the user.
 MD
-printf '# investigate\n\nCovers: investigate, ground, distill\nKind: capability\n' > evals/tasks/investigate/task.md
+printf -- '---\ncovers: investigate, ground, distill\n---\n\n# investigate\n' > evals/tasks/investigate/task.md
 echo 'Look into why the discount barely changes big orders.' > evals/tasks/investigate/prompt.md
 echo 'check "no code edited" test -z "$(git status --porcelain -- pricing.py)"' > evals/tasks/investigate/checks.sh
 echo 'true' > evals/tasks/investigate/reference/apply.sh

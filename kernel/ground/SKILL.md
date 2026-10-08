@@ -9,7 +9,7 @@ Find out what is true. Not what is likely, and not what was true last time.
 
 ## Contract
 
-```
+```contract
 Layer:     verb
 Input:     question; optional source scope (code | history | docs | runtime | transcripts | web); slug
 Output:    entry F<n> appended to $WORK/<slug>/findings.md

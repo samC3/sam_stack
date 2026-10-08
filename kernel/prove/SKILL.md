@@ -9,7 +9,7 @@ Turn a claim into an observation. A check that has never failed proves nothing.
 
 ## Contract
 
-```
+```contract
 Layer:     verb
 Input:     claim; surface (the program, endpoint, UI or command where the claim must hold); slug
 Output:    entry P<n> appended to $WORK/<slug>/proofs.md

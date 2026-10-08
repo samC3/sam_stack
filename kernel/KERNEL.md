@@ -11,22 +11,24 @@ Rules every skill in this set obeys. It is in context only where an `AGENTS.md` 
 | **Workflow** | Wiring: which verbs, in what order, with what parameters. Carries no discipline of its own | Verbs, combinators |
 
 - Verbs never invoke workflows.
-- Verbs and combinators live in `kernel/<name>/`, workflows in `workflows/<name>/`. Every skill is covered by at least one eval task: a `Covers:` line in `evals/tasks/<name>/task.md` names it.
+- Verbs and combinators live in `kernel/<name>/`, workflows in `workflows/<name>/`. Every skill is covered by at least one eval task: the `covers:` field in `evals/tasks/<name>/task.md` names it.
 - Only `make-skill` and `codify` write skill files. Only `codify` edits this kernel.
 - If a workflow starts explaining *how* to ask, verify, or review, that text belongs in a verb.
 - A new verb is admitted only when about three workflows need something no existing verb plus parameters can express.
 
 ## Skill contract
 
-Every `SKILL.md` has frontmatter (`name`, `description`) and then a `## Contract` block:
+Every `SKILL.md` has frontmatter (`name`, `description`) and then a `## Contract` section holding a ` ```contract ` block, one `Key: value` per line:
 
-```
+```contract
 Layer:     verb | combinator | workflow
 Input:     what the caller supplies (and defaults)
 Output:    the artifact written, with path
 Stop:      the observable condition that ends the skill
 Returns:   what the caller gets back in the conversation
 ```
+
+`evals/lint.py` checks every skill's frontmatter and contract, and every eval task.
 
 The `description` says what the skill does and when to use it, including the phrases a user would type. Routing depends on it.
 
@@ -41,17 +43,19 @@ Skills communicate through files, not conversation memory, so work survives sess
 - A task's state is `$WORK/<slug>/`. The slug is kebab-case from the task. Reuse an existing directory when the task matches it.
 - When the task is finished, move `$WORK/<slug>/` to `$WORK/_archive/<slug>/`.
 - `$SAM_STACK_WORK/lessons/` is shared across all projects and never archived. Names starting with `_`, and `lessons`, are reserved: never a slug.
-- Each verb appends to its own log, one entry per heading, with a stable id. This table is the registry: every file a skill's contract writes under `$WORK/<slug>/` or `$SAM_STACK_WORK/` is listed here, and `evals/lint.sh` rejects any that isn't, and any repo-relative `work/` path.
+- Each verb appends to its own log, one entry per heading, with a stable id. The registry below lists every file a skill writes under `$WORK/<slug>/` or `$SAM_STACK_WORK/`, with its writer and ids. `evals/lint.py` rejects a row whose writer isn't a skill, and any repo-relative `work/` path in a skill.
 
-| File | Written by | Id |
-|---|---|---|
-| `findings.md` | ground | `F1`, `F2`, … |
-| `decisions.md` | ask | `D1`, … (open items `O1`, …) |
-| `proofs.md` | prove | `P1`, … |
-| `verdicts.md` | judge | `J1`, … |
-| `<format>.md` (`spec.md`, `handoff.md`, …), `tickets/NN-<name>.md` | distill | — |
-| `lessons.md` | codify | `L1`, … |
-| `$SAM_STACK_WORK/lessons/candidates.md` | codify | — (shared across projects, never archived) |
+```registry
+# file                                    writer    ids
+findings.md                               ground    F1, F2, …
+decisions.md                              ask       D1, … (open items O1, …)
+proofs.md                                 prove     P1, …
+verdicts.md                               judge     J1, …
+<format>.md                               distill   — (spec.md, handoff.md, review.md, …)
+tickets/NN-<name>.md                      distill   —
+lessons.md                                codify    L1, …
+$SAM_STACK_WORK/lessons/candidates.md     codify    — (shared across projects, never archived)
+```
 
 - Logs are append-only. To revise an entry, add a new one that says `supersedes F3`.
 - Refer to entries by id instead of restating them.

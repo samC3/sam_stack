@@ -1,4 +1,5 @@
-# brief-keeps-gaps
+---
+covers: brief
+---
 
-Covers: brief
-Kind: regression
+# brief-keeps-gaps

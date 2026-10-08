@@ -1,4 +1,4 @@
-# A correct plan outcome, used by `evals/run.sh --graders`.
+# A correct plan outcome, used by `evals/run.py --graders`.
 P="$WORK/profile-cache"; mkdir -p "$P"
 cat > "$P/findings.md" <<'MD'
 ## F1: How many replicas run in production?

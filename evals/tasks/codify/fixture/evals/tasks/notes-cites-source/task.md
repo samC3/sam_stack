@@ -1,4 +1,5 @@
-# notes-cites-source
+---
+covers: notes
+---
 
-Covers: notes
-Kind: regression
+# notes-cites-source

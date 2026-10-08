@@ -5,18 +5,18 @@ lint_with_stop() {
   local t s; t="$(mktemp -d)"; cp -R kernel evals "$t/"
   python3 -c "import re,sys,pathlib;p=pathlib.Path(sys.argv[1]);p.write_text(re.sub(r'(?m)^Stop:.*$','Stop:\t'+sys.argv[2],p.read_text()))" \
     "$t/kernel/notes/SKILL.md" "$1"
-  bash evals/lint.sh "$t" >/dev/null 2>&1; s=$?; rm -rf "$t"; return $s
+  python3 evals/lint.py "$t" >/dev/null 2>&1; s=$?; rm -rf "$t"; return $s
 }
 rejects_tab_only()   { ! lint_with_stop ""; }
 accepts_tab_text()   { lint_with_stop "the entry is written"; }
-new_lint_fixture()   { [ -n "$(git ls-files --others --exclude-standard evals/lint-fixtures)$(git diff --name-only "$ROOT_COMMIT" -- evals/lint-fixtures)" ]; }
+new_lint_case()      { ! git diff --quiet "$ROOT_COMMIT" -- evals/lint_test.py && python3 evals/lint_test.py >/dev/null; }
 unchanged()          { git diff --quiet "$ROOT_COMMIT" -- "$@" && [ -z "$(git ls-files --others --exclude-standard -- "$@")" ]; }
 
 # Lesson 1: a mechanism in lint, both directions, with a regression fixture.
 check "lint rejects a tab-only contract field"          rejects_tab_only
 check "lint still accepts a tab followed by text"       accepts_tab_text
-check "a lint regression fixture was added"             new_lint_fixture
-check "lint and its tests pass on the repo"             sh -c 'bash evals/lint.sh . && bash evals/lint-test.sh'
+check "a lint regression case was added"                new_lint_case
+check "lint and its tests pass on the repo"             sh -c 'python3 evals/lint.py . && python3 evals/lint_test.py'
 # Lesson 2: below the evidence bar, so a candidate and nothing else.
 check "the single incident is logged as a candidate"   has "$SAM_STACK_WORK/lessons/candidates.md" "[Bb]rief|[Ii]nvent|[Rr]efund"
 check "the brief skill and its task are unchanged"      unchanged kernel/brief evals/tasks/brief-keeps-gaps
