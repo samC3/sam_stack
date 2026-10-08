@@ -59,16 +59,20 @@ evals/
 
 ## Evals
 
-Evals check that each verb keeps the one habit it exists for. They run the real skills in headless Claude Code sessions, so **they spend real tokens.** Read [Spending](#spending) before running them.
+Evals are a small set of **tasks**: realistic scenarios that run a workflow end to end, so each one exercises several skills at once. They're graded on the **outcome** (what ended up in the repo and in `$WORK`), not on which skills fired. This follows Anthropic's [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). Tasks run the real skills in headless Claude Code sessions, so **they spend real tokens.** Read [Spending](#spending) before running them.
+
+The older one-habit cases in `evals/cases/` are being replaced by tasks; they still run with `--cases`.
 
 ### Running
 
 ```sh
 evals/lint.sh                             # free: structure of every skill and case
 evals/lint-test.sh                        # free: lint.sh still rejects what it should, and only that
-evals/run.sh                              # every case, once
-evals/run.sh prove-red-first              # named cases only
-evals/run.sh --repeat 3 --jobs 6 ask-cache-grill
+evals/run.sh --graders                    # free: each task's checks fail untouched and pass on its reference
+evals/run.sh                              # every task, once
+evals/run.sh review                       # named tasks (or legacy cases) only
+evals/run.sh --repeat 3 --jobs 6 plan
+evals/run.sh --cases                      # every legacy case
 
 # Baseline comparison: run against the skills as of HEAD
 git worktree add /tmp/skills-base HEAD
@@ -79,15 +83,43 @@ git worktree remove /tmp/skills-base
 Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<case>/r<n>/` (override with `EVALS_OUT`). It lives outside this repo because a run repo nested inside it would inherit its `AGENTS.md`. After each case, the runner deletes the state Claude Code keeps for the run and grader folders (`~/.claude/projects/…`, `/private/tmp/claude-<uid>/…`), so runs don't pile up there. Each run folder holds:
 - `repo/`: the fixture after the run
 - `work/`: the run's `$SAM_STACK_WORK`, with the task state under `work/repo/`
-- `transcript.jsonl` and `digest.txt`: what the agent did
-- `grade.md`: the grader's verdict
+- `transcript.jsonl`, `digest.txt` and `conversation.md`: what the agent did and said, turn by turn
+- `checks.txt` and `grade.md`: one line per check and per rubric dimension
 
-The script prints PASS or FAIL for each run, then a summary of passes per case. It exits non-zero if any run failed.
+Each trial prints a line like `plan  r1  FAIL  checks 4/5  rubric 4/5  turns 6`, with each failed check and each failed or UNKNOWN rubric dimension listed under it. That gives partial credit and shows which part of the workflow broke. A trial passes only if every check and every dimension passes. The script ends with passing trials per task, and exits non-zero if any trial failed. **Read the transcripts** of new or failing tasks: a grader's verdict isn't trustworthy until you've checked a few by hand.
 
 Each case runs in a fresh git repo, set up the way a real repo would be:
 - `KERNEL.md` is imported from `AGENTS.md` with a relative path. Imports from outside the project don't load in headless runs.
 - Each skill in `kernel/` and `workflows/` (or the `--root` checkout) is linked into `.claude/skills/`.
 - Only project settings load (`--setting-sources project`), so your user-level skills and memory don't interfere.
+
+### Tasks
+
+| Task | Scenario | Covers |
+|---|---|---|
+| `review` | A branch whose PR claims "done and tested" but misses one of three spec criteria | adversarial-review, ground, judge, prove, distill |
+| `plan` | "Add caching", in a repo whose README says 4 replicas while the deploy config says 6. A simulated user holds the preferences and leaves one point undecided | ground, ask, distill |
+| `make-skill` | Build a small workflow with every decision given, and be honest that the paid eval wasn't run | make-skill, ground, distill, prove |
+
+All three are `Kind: capability` until they pass reliably; then they become regression tasks.
+
+A task is `evals/tasks/<name>/`:
+
+```
+task.md              # what it's for; Covers: <skills>; Kind: capability | regression; Turns: <max>
+prompt.md            # the first user message
+user.md              # optional: a simulated user's hidden situation, which makes the task multi-turn
+fixture/  work/  setup.sh   # the repo, the task state in $WORK, and setup after the first commit
+checks.sh            # named outcome checks: check "<label>" <command ...>
+rubric.md            # numbered dimensions, each graded PASS / FAIL / UNKNOWN by a model
+reference/apply.sh   # produces a correct outcome, for --graders
+```
+
+How a task should be built:
+- **Grade the outcome.** Check files, verdicts and git state, not which skills fired.
+- **Give every task a reference solution,** and run `--graders` before any paid run. A check that can't pass on a correct outcome is a broken task, not a weak agent.
+- **Make it multi-turn when the workflow asks the user things.** `user.md` gives the simulated user preferences, plus at least one point it hasn't decided, so you can see whether the agent keeps it open.
+- **Use the rubric only for what a script can't see,** one dimension per line. UNKNOWN counts as not passing, so a vague dimension shows up instead of passing silently.
 
 ### Writing a case
 
