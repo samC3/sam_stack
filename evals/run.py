@@ -11,19 +11,21 @@ Usage: evals/run.py [--repeat N] [--jobs J] [--root DIR] [task ...]
               pass on its reference solution
 
 A task is evals/tasks/<name>/:
-  task.md     frontmatter (covers, turns), then what it's for
+  task.md     frontmatter (covers, turns, env: KEY=VALUE …), then what it's for
   prompt.md   the first user message
   user.md     a simulated user's hidden situation; makes the task multi-turn (optional)
   fixture/    files copied into a fresh git repo (optional)
   work/       task state copied into the run's $WORK, outside the repo (optional)
   setup.sh    run in the repo after the first commit (optional)
+  bin/        fake tools put first on the PATH, e.g. a fake herdr (optional)
   checks.sh   named outcome checks: `check "<label>" <command ...>` (lib.sh helpers)
   rubric.md   numbered dimensions, each graded PASS / FAIL / UNKNOWN by a model
   reference/apply.sh   produces a correct outcome in the repo, for --graders
 
 The run repo gets the kernel the way a real repo does: KERNEL.md imported from
 AGENTS.md, and each skill linked into .claude/skills. Only project settings
-load, so user-level skills and memory don't interfere.
+load, so user-level skills and memory don't interfere. HERDR_* variables are
+dropped, so a run started from a herdr pane can't drive the real herdr.
 """
 import argparse
 import json
@@ -55,17 +57,22 @@ def claude(prompt, cwd, env, *flags):
 
 
 def events(jsonl):
+    """The transcript's JSON objects, skipping anything else."""
     for line in jsonl.splitlines():
         try:
-            yield json.loads(line)
+            event = json.loads(line)
         except ValueError:
-            pass
+            continue
+        if isinstance(event, dict):
+            yield event
 
 
 def digest(transcript):
     """The transcript as one line per assistant text, tool call and tool result, for the grader."""
     for event in events(transcript):
-        content = (event.get("message") or {}).get("content")
+        if event.get("type") not in ("assistant", "user"):
+            continue
+        content = event["message"].get("content")
         for part in content if isinstance(content, list) else []:
             kind = part.get("type") if isinstance(part, dict) else None
             if event["type"] == "assistant" and kind == "text":
@@ -96,8 +103,14 @@ class Trial:
         self.task, self.src, self.dir, self.skills_root = task, TASKS / task, folder, skills_root
         self.repo = folder / "repo"
         self.state = folder / "work"
+        front = frontmatter((self.src / "task.md").read_text()) or {}
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith("HERDR_")}
+        if (self.src / "bin").is_dir():
+            self.env["PATH"] = f"{self.src / 'bin'}:{self.env['PATH']}"
+        self.env.update(pair.split("=", 1) for pair in front.get("env", "").split())
         # The project name is the repo's directory name, so $WORK is work/repo.
-        self.env = {**os.environ, "ROOT": str(ROOT), "SAM_STACK_WORK": str(self.state), "WORK": str(self.state / "repo")}
+        self.env.update(ROOT=str(ROOT), SAM_STACK_WORK=str(self.state), WORK=str(self.state / "repo"))
+        self.max_turns = int(front.get("turns", 8))
         self.turns = 0
 
     def git(self, *args):
@@ -200,8 +213,7 @@ def run_trial(task, rep, skills_root):
     t.prepare()
     session = t.agent_turn((t.src / "prompt.md").read_text())
     if (t.src / "user.md").exists():
-        max_turns = int((frontmatter((t.src / "task.md").read_text()) or {}).get("turns", 8))
-        while t.turns < max_turns and session:
+        while t.turns < t.max_turns and session:
             reply = t.user_reply()
             if "<<END>>" in (line.strip() for line in reply.splitlines()):
                 break

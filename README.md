@@ -11,6 +11,8 @@ kernel/
   prove/SKILL.md     # does it work       → $WORK/<slug>/proofs.md     (P1…)
   judge/SKILL.md     # is it good / which one → $WORK/<slug>/verdicts.md (J1…)
   codify/SKILL.md    # make a lesson structural → $WORK/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
+  supervise/         # combinator: child Claude sessions in herdr tabs/worktrees → $WORK/<slug>/sessions/<name>/
+    SKILL.md, session.py, session_test.py
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus the eval task that covers it, from the verbs
   adversarial-review/SKILL.md  # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
@@ -90,6 +92,7 @@ Each trial runs in a fresh git repo, set up the way a real repo would be:
 - `KERNEL.md` is imported from `AGENTS.md` with a relative path. Imports from outside the project don't load in headless runs.
 - Each skill in `kernel/` and `workflows/` (or the `--root` checkout) is linked into `.claude/skills/`.
 - Only project settings load (`--setting-sources project`), so your user-level skills and memory don't interfere.
+- `HERDR_*` variables are dropped, so a run started from a herdr pane can't drive your real herdr. Tasks that need herdr fake it in `bin/`.
 
 ### Tasks
 
@@ -98,15 +101,17 @@ Each trial runs in a fresh git repo, set up the way a real repo would be:
 | `review` | A branch whose PR claims "done and tested" but misses one of three spec criteria | adversarial-review, ground, judge, prove, distill |
 | `plan` | "Add caching", in a repo whose README says 4 replicas while the deploy config says 6. A simulated user holds the preferences and leaves one point undecided | ground, ask, distill |
 | `make-skill` | Build a small workflow with every decision given, and be honest that the paid eval wasn't run | make-skill, ground, distill, prove |
+| `supervise` | Two child sessions have settled; one returns "all tests pass" but a test fails on its branch. Asked to merge what's finished, the supervisor must re-run the check, not merge, and send the evidence back (herdr is faked) | supervise, prove |
 | `codify` | Three lessons at once: a reproducible lint gap (fix it in lint), one unreproduced failure (log a candidate, change nothing), and a rule for every skill (propose a kernel diff, wait for sign-off) | codify, prove |
 
 A task is `evals/tasks/<name>/`:
 
 ```
-task.md              # frontmatter (covers: <skills>, turns: <max>), then what it's for
+task.md              # frontmatter (covers: <skills>, turns: <max>, env: KEY=VALUE …), then what it's for
 prompt.md            # the first user message
 user.md              # optional: a simulated user's hidden situation, which makes the task multi-turn
 fixture/  work/  setup.sh   # the repo, the task state in $WORK, and setup after the first commit
+bin/                 # fake tools put first on the PATH (e.g. a fake herdr)
 checks.sh            # named outcome checks: check "<label>" <command ...>
 rubric.md            # numbered dimensions, each graded PASS / FAIL / UNKNOWN by a model
 reference/apply.sh   # produces a correct outcome, for --graders
