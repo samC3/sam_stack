@@ -9,24 +9,24 @@ Wiring from raw input to build-ready artifacts. The habit: every choice in the s
 
 ## Contract
 
-```
+```contract
 Layer:     workflow
-Input:     the thing to build (an idea in the prompt, a doc path, a URL or an issue); slug (default: the feature's kebab-case name, so build and review find the files under the same work/<slug>/)
-Output:    work/<slug>/findings.md, decisions.md, verdicts.md entries; work/<slug>/spec.md; work/<slug>/tickets/NN-<name>.md
+Input:     the thing to build (an idea in the prompt, a doc path, a URL or an issue); slug (default: the feature's kebab-case name, so build and review find the files under the same $WORK/<slug>/)
+Output:    $WORK/<slug>/findings.md, decisions.md, verdicts.md entries; $WORK/<slug>/spec.md; $WORK/<slug>/tickets/NN-<name>.md
 Stop:      the latest J entry has no findings marked confirmed, or two fix rounds are done and the remaining defects are reported; or ask is waiting on the human's answer
 Returns:   while ask is waiting: its one question. Otherwise: the spec and ticket paths, the ticket order, the open questions with their defaults, and any defects judge left unresolved, with ids
 ```
 
 ## Steps
 
-1. **`ground`: what is being asked for, and what does it touch?** Sources: the input first, then the code, docs and history it touches. If `work/<slug>/findings.md` exists, reuse it and ground only what it doesn't answer. Record:
+1. **`ground`: what is being asked for, and what does it touch?** Sources: the input first, then the code, docs and history it touches. If `$WORK/<slug>/findings.md` exists, reuse it and ground only what it doesn't answer. Record:
    - one F entry listing each requirement the input states, one per line, each tagged `[fact: input]` with a quote. Judge's coverage check in step 4 works from this list.
    - the facts the requirements depend on: existing code, conventions, constraints
    - what the input leaves unsaid. These become ask's topics, not assumptions.
 
 2. **`ask`: settle every choice the input leaves open.** Topic: the gaps from step 1. Ask until no open branch would change what gets built. End the turn on each question. Don't write the spec or tickets until ask has stopped. Anything still open when ask stops is an `O` entry with its default.
 
-3. **`distill` the spec, then the tickets.** Reader: a build workflow that has `KERNEL.md` and `work/<slug>/` and nothing else, and that will implement one ticket at a time.
+3. **`distill` the spec, then the tickets.** Reader: a build workflow that has `KERNEL.md` and `$WORK/<slug>/` and nothing else, and that will implement one ticket at a time.
    - Format `spec`. Out of scope lists what the input mentions but this work won't do. Open questions lists every `O` entry with its default.
    - Format `tickets`. Each ticket is a vertical slice and cites the `D`/`F` ids its acceptance rests on. A ticket that depends on an open question lists the `O` id under Depends on.
 
@@ -43,4 +43,4 @@ Returns:   while ask is waiting: its one question. Otherwise: the spec and ticke
 
 - Don't write code or start building. Shape ends at the tickets.
 - Don't resolve an open question by picking its default yourself. Only the human closes an `O` entry.
-- If the slug's `work/<slug>/` already has decisions, read them and don't re-ask.
+- If the slug's `$WORK/<slug>/` already has decisions, read them and don't re-ask.

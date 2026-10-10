@@ -1,0 +1,6 @@
+S="$(ls "$WORK"/*/spec.md 2>/dev/null | head -1)"
+check "spec written"                          test -n "$S"
+check "user's decisions logged"               has "$WORK/*/decisions.md" "^## D[0-9]"
+check "repo facts logged with sources"        has "$WORK/*/findings.md" "\[fact: "
+check "spec uses the deployed replica count"  has "$S" "(^|[^0-9.])6 (app |service )?(replicas|instances|processes)|([Rr]eplicas|REPLICAS)[^0-9]{0,20}6([^0-9]|$)"
+check "no code changed"                       test -z "$(git status --porcelain)"

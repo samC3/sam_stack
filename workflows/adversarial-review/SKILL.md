@@ -9,21 +9,21 @@ Wiring for a cold review: what the work was meant to do, whether it does it, and
 
 ## Contract
 
-```
+```contract
 Layer:     workflow
 Input:     subject (PR number, branch, or commit range; default: current branch against the default branch); goals (optional; otherwise grounded); slug (default: review-<branch>)
-Output:    work/<slug>/findings.md, proofs.md, verdicts.md entries; distill's work/<slug>/<format>.md with format review
-Stop:      the J entry gives every goal a verdict (met | not met | unproven), each met or not met citing a P id and each unproven saying what was tried, the defects pass is recorded, and work/<slug>/review.md is written; or no goals could be found and the user has been asked for them
+Output:    $WORK/<slug>/findings.md, proofs.md, verdicts.md entries; distill's $WORK/<slug>/<format>.md with format review
+Stop:      the J entry gives every goal a verdict (met | not met | unproven), each met or not met citing a P id and each unproven saying what was tried, the defects pass is recorded, and $WORK/<slug>/review.md is written; or no goals could be found and the user has been asked for them
 Returns:   merge / changes needed in one line, the goals not met or unproven, the top defects, and the path to review.md
 ```
 
 ## Steps
 
-1. **`ground`: what is the subject?** Question: which commits and files does the change contain, against what base? Get names and stats only (`git log`, `git diff --stat`, `gh pr view`). The diff itself waits until step 3. Unless the subject is already checked out, check it out in a worktree (`git worktree add`) so the user's checkout stays put. The review's own `work/<slug>/` goes in the user's checkout, not the worktree.
+1. **`ground`: what is the subject?** Question: which commits and files does the change contain, against what base? Get names and stats only (`git log`, `git diff --stat`, `gh pr view`). The diff itself waits until step 3. Unless the subject is already checked out, check it out in a worktree (`git worktree add`) so the user's checkout stays put.
 
 2. **`ground`: what was it meant to do?** Question: which goals and acceptance criteria were set for this work? Sources, in order:
    - goals the caller passed in
-   - the author's `work/<their-slug>/spec.md`, `decisions.md`, `tickets/`
+   - the author's `$WORK/<their-slug>/spec.md`, `decisions.md`, `tickets/`
    - the PR body and the issues it links
 
    Record each goal as an observable criterion. If no source states any goal, stop and `ask` the user for them. Never derive goals from the diff.
@@ -36,7 +36,7 @@ Returns:   merge / changes needed in one line, the goals not met or unproven, th
 
 ## Rules
 
-- The author's `work/` files are input. Never append to them. The review's logs go in its own `work/<slug>/`.
+- The author's `$WORK/<their-slug>/` files are input. Never append to them. The review's logs go in its own `$WORK/<slug>/`.
 - Don't edit, fix or commit the work under review, and don't commit the review. The user decides where it lives.
 - Post to GitHub only when the user asks.
 - If this conversation wrote the change, say so and recommend running the review in a new session.

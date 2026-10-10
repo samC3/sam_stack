@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+# Fake herdr for the supervise eval: logs each call (one line) next to the run's
+# state folder, and reports both child sessions as settled.
+import json, os, sys
+args = sys.argv[1:]
+with open(os.path.join(os.environ["SAM_STACK_WORK"], "..", "herdr.log"), "a") as log:
+    log.write(" ".join(args).replace("\n", " ") + "\n")
+if args[:2] in (["tab", "create"], ["worktree", "create"]):
+    print(json.dumps({"result": {"root_pane": {"pane_id": "w1:p9"}}}))
+elif args[:2] in (["agent", "get"], ["agent", "wait"]):
+    print(json.dumps({"result": {"agent": {"name": args[2], "agent_status": "done"}}}))
+else:
+    print(json.dumps({"result": {}}))
