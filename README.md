@@ -14,6 +14,7 @@ kernel/
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus its eval case, from the verbs
   adversarial-review/SKILL.md  # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
+  shape/SKILL.md       # idea or doc → spec.md + tickets/ for a build workflow; asks rather than assumes
 evals/
   lint.sh            # free structural check of every skill and case
   lint-test.sh       # free regression tests for lint.sh, one per fixture in lint-fixtures/
