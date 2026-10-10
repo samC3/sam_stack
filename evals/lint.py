@@ -12,6 +12,9 @@ Usage: evals/lint.py [repo-root]   (default: this repo)
 - Every task has prompt.md and checks.sh or rubric.md, and checks.sh comes with
   reference/apply.sh. Its task.md frontmatter covers only real skills, and every
   skill is covered by some task.
+- Every skill a task covers is checked as invoked (`invoked <skill>` in checks.sh),
+  and checks.sh comes with reference/transcript.jsonl: a step that names a skill
+  invokes it (KERNEL.md Layers).
 """
 import re
 import sys
@@ -95,9 +98,12 @@ def lint(root):
         covers = [c.strip() for c in front.get("covers", "").split(",") if c.strip()]
         if not covers:
             err(task, "task.md needs frontmatter naming the skills it covers (covers: a, b)")
+        checks = (task / "checks.sh").read_text() if (task / "checks.sh").exists() else ""
         for name in covers:
             if name not in names:
                 err(task, f"covers '{name}', which isn't a skill")
+            if not re.search(rf"\binvoked {re.escape(name)}[ \t]*$", checks, re.M):
+                err(task, f"covers '{name}' but checks.sh has no `invoked {name}` check")
         covered.update(covers)
         if not front.get("turns", "1").isdigit():
             err(task, "turns: must be a whole number")
@@ -105,8 +111,9 @@ def lint(root):
             err(task, "no prompt.md")
         if not ((task / "checks.sh").exists() or (task / "rubric.md").exists()):
             err(task, "needs checks.sh or rubric.md")
-        if (task / "checks.sh").exists() and not (task / "reference" / "apply.sh").exists():
-            err(task, "checks.sh has no reference/apply.sh to test it against (run.py --graders)")
+        for ref in ("apply.sh", "transcript.jsonl"):
+            if (task / "checks.sh").exists() and not (task / "reference" / ref).exists():
+                err(task, f"checks.sh has no reference/{ref} to test it against (run.py --graders)")
 
     for path in skills:
         if path.parent.name not in covered:

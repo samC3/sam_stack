@@ -27,6 +27,8 @@ printf -- '---\ncovers: investigate, ground, distill\n---\n\n# investigate\n' > 
 echo 'Look into why the discount barely changes big orders.' > evals/tasks/investigate/prompt.md
 echo 'check "no code edited" test -z "$(git status --porcelain -- pricing.py)"' > evals/tasks/investigate/checks.sh
 echo 'true' > evals/tasks/investigate/reference/apply.sh
+for s in investigate ground distill; do echo "check \"invoked $s\" invoked $s" >> evals/tasks/investigate/checks.sh; done
+for s in investigate ground distill; do printf '{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "%s"}}]}}\n' "$s"; done > evals/tasks/investigate/reference/transcript.jsonl
 cat > "$WORK/make-skill-investigate/proofs.md" <<'MD'
 ## P1: lint passes
 Observed:

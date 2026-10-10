@@ -7,4 +7,13 @@ check "user's decisions logged"         has "$WORK/*/decisions.md" "^## D[0-9]"
 check "an open question logged"         has "$WORK/*/decisions.md" "^## O[0-9]"
 check "spec and tickets judged"         has "$WORK/*/verdicts.md" "^## J[0-9]"
 check "repo facts logged with sources"  has "$WORK/*/findings.md" "\[fact: "
+check "spec uses the real store, not the README's" has "$S" "notes\.json"
 check "no code changed"                 test -z "$(git status --porcelain)"
+
+
+# Every covered skill ran as a skill, not inline (KERNEL.md Layers).
+check "invoked shape"                          invoked shape
+check "invoked ground"                         invoked ground
+check "invoked ask"                            invoked ask
+check "invoked distill"                        invoked distill
+check "invoked judge"                          invoked judge

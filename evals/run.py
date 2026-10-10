@@ -21,6 +21,7 @@ A task is evals/tasks/<name>/:
   checks.sh   named outcome checks: `check "<label>" <command ...>` (lib.sh helpers)
   rubric.md   numbered dimensions, each graded PASS / FAIL / UNKNOWN by a model
   reference/apply.sh   produces a correct outcome in the repo, for --graders
+  reference/transcript.jsonl   the Skill calls a correct run makes, for --graders
 
 The run repo gets the kernel the way a real repo does: KERNEL.md imported from
 AGENTS.md, and each skill linked into .claude/skills. Only project settings
@@ -246,7 +247,7 @@ def test_graders(task, skills_root):
     t.prepare()
     untouched = t.checks("untouched")
     t.bash(reference)
-    after = t.checks("reference")
+    after = t.checks("reference", t.src / "reference" / "transcript.jsonl")
     fails_before = sum(c.startswith("FAIL") for c in untouched)
     fails_after = [c for c in after if c.startswith("FAIL")]
     passed = fails_before > 0 and not fails_after

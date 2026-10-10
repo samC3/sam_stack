@@ -1,0 +1,2 @@
+{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "supervise"}}]}}
+{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "prove"}}]}}

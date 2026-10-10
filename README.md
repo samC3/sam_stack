@@ -63,7 +63,7 @@ evals/
 
 ## Evals
 
-Evals are a small set of **tasks**: realistic scenarios that run a workflow end to end, so each one exercises several skills at once. They're graded on the **outcome** (what ended up in the repo and in `$WORK`), not on which skills fired. This follows Anthropic's [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). Tasks run the real skills in headless Claude Code sessions, so **they spend real tokens.** Read [Spending](#spending) before running them.
+Evals are a small set of **tasks**: realistic scenarios that run a workflow end to end, so each one exercises several skills at once. They're graded on the **outcome** (what ended up in the repo and in `$WORK`), plus one thing about the process: every skill a task covers must actually be invoked, because a step done inline from a skill's description skips its procedure. This follows Anthropic's [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). Tasks run the real skills in headless Claude Code sessions, so **they spend real tokens.** Read [Spending](#spending) before running them.
 
 ### Running
 
@@ -73,11 +73,11 @@ evals/lint_test.py                        # free: lint.py still rejects what it 
 evals/run.py --graders                    # free: each task's checks fail untouched and pass on its reference
 evals/run.py                              # every task, once
 evals/run.py review                       # named tasks only
-evals/run.py --repeat 3 --jobs 6 plan
+evals/run.py --repeat 3 --jobs 6 shape
 
 # Baseline comparison: run against the skills as of HEAD
 git worktree add /tmp/skills-base HEAD
-evals/run.py --root /tmp/skills-base plan
+evals/run.py --root /tmp/skills-base shape
 git worktree remove /tmp/skills-base
 ```
 
@@ -87,7 +87,7 @@ Each run goes to `~/.cache/sam_stack-evals/<timestamp>-<pid>/<task>/r<n>/` (over
 - `transcript.jsonl`, `digest.txt` and `conversation.md`: what the agent did and said, turn by turn
 - `checks.txt` and `grade.md`: one line per check and per rubric dimension
 
-Each trial prints a line like `plan  r1  FAIL  checks 4/5  rubric 4/5  turns 6`, with each failed check and each failed or UNKNOWN rubric dimension listed under it. That gives partial credit and shows which part of the workflow broke. A trial passes only if every check and every dimension passes. The script ends with passing trials per task, and exits non-zero if any trial failed. **Read the transcripts** of new or failing tasks: a grader's verdict isn't trustworthy until you've checked a few by hand.
+Each trial prints a line like `shape  r1  FAIL  checks 4/5  rubric 4/5  turns 6`, with each failed check and each failed or UNKNOWN rubric dimension listed under it. That gives partial credit and shows which part of the workflow broke. A trial passes only if every check and every dimension passes. The script ends with passing trials per task, and exits non-zero if any trial failed. **Read the transcripts** of new or failing tasks: a grader's verdict isn't trustworthy until you've checked a few by hand.
 
 Each trial runs in a fresh git repo, set up the way a real repo would be:
 - `KERNEL.md` is imported from `AGENTS.md` with a relative path. Imports from outside the project don't load in headless runs.
@@ -100,8 +100,7 @@ Each trial runs in a fresh git repo, set up the way a real repo would be:
 | Task | Scenario | Covers |
 |---|---|---|
 | `review` | A branch whose PR claims "done and tested" but misses one of three spec criteria | adversarial-review, ground, judge, prove, distill |
-| `plan` | "Add caching", in a repo whose README says 4 replicas while the deploy config says 6. A simulated user holds the preferences and leaves one point undecided | ground, ask, distill |
-| `shape` | "Let users export their notes", in a small CLI. A simulated user picks format, destination and scope, and leaves restore undecided. The spec and tickets must keep restore open, invent nothing, and give each ticket a runnable Verify | shape, ground, ask, distill, judge |
+| `shape` | "Let users export their notes", in a small CLI whose README names the wrong store (SQLite; the code uses notes.json). A simulated user picks format, destination and scope, and leaves restore undecided. The spec and tickets must keep restore open, invent nothing, and give each ticket a runnable Verify | shape, ground, ask, distill, judge |
 | `make-skill` | Build a small workflow with every decision given, and be honest that the paid eval wasn't run | make-skill, ground, distill, prove |
 | `supervise` | Two child sessions have settled; one returns "all tests pass" but a test fails on its branch. Asked to merge what's finished, the supervisor must re-run the check, not merge, and send the evidence back (herdr is faked) | supervise, prove |
 | `codify` | Three lessons at once: a reproducible lint gap (fix it in lint), one unreproduced failure (log a candidate, change nothing), and a rule for every skill (propose a kernel diff, wait for sign-off) | codify, prove |
@@ -117,16 +116,17 @@ bin/                 # fake tools put first on the PATH (e.g. a fake herdr)
 checks.sh            # named outcome checks: check "<label>" <command ...>
 rubric.md            # numbered dimensions, each graded PASS / FAIL / UNKNOWN by a model
 reference/apply.sh   # produces a correct outcome, for --graders
+reference/transcript.jsonl  # the Skill calls a correct run makes, for --graders
 ```
 
 How a task should be built:
-- **Grade the outcome.** Check files, verdicts and git state, not which skills fired.
+- **Grade the outcome.** Check files, verdicts and git state. The one process check is `invoked <skill>` for each skill in `covers:`, which lint requires.
 - **Give every task a reference solution,** and run `--graders` before any paid run. A check that can't pass on a correct outcome is a broken task, not a weak agent.
 - **Make it multi-turn when the workflow asks the user things.** `user.md` gives the simulated user preferences, plus at least one point it hasn't decided, so you can see whether the agent keeps it open.
 - **Use the rubric only for what a script can't see,** one dimension per line. UNKNOWN counts as not passing, so a vague dimension shows up instead of passing silently.
 - **Every skill is covered by at least one task.** Lint checks each task's `covers:` and rejects names that aren't skills.
 
-`setup.sh` and `reference/apply.sh` get `$ROOT` (this repo), and `$WORK` and `$SAM_STACK_WORK` (the run's task state). `checks.sh` runs in the run repo with `lib.sh` loaded: `check "<label>" <command ...>` records one named result, and `has <glob> <regex>` is the usual command. A run that creates a `work/` folder in the repo fails. The grader is a separate Claude session. It reads the rubric, a digest of the transcript, and the outcome: the run's task state, the repo's diff since setup, and any new files.
+`setup.sh` and `reference/apply.sh` get `$ROOT` (this repo), and `$WORK` and `$SAM_STACK_WORK` (the run's task state). `checks.sh` runs in the run repo with `lib.sh` loaded: `check "<label>" <command ...>` records one named result, `has <glob> <regex>` is the usual command, and `invoked <skill>` checks the transcript for a Skill call. A run that creates a `work/` folder in the repo fails. The grader is a separate Claude session. It reads the rubric, a digest of the transcript, and the outcome: the run's task state, the repo's diff since setup, and any new files.
 
 ### Results so far
 
@@ -135,7 +135,7 @@ First paid run, one trial each (about $2 for the agents, plus simulated-user and
 | Task | Checks | Rubric | What it showed |
 |---|---|---|---|
 | `review` | 6/7 | 4/4 | The review was right. The one failed check was an eval bug (too strict a pattern), since fixed |
-| `plan` | 5/5 | 3/5 | A harness bug: the simulated user saw only the agent's last text block, so it never saw the options. Since fixed. A real `distill` flaw too: after the cold read it filled gaps with values nobody chose (a 10 ms target) instead of marking them open |
+| `plan` (since folded into `shape`) | 5/5 | 3/5 | A harness bug: the simulated user saw only the agent's last text block, so it never saw the options. Since fixed. A real `distill` flaw too: after the cold read it filled gaps with values nobody chose (a 10 ms target) instead of marking them open |
 | `make-skill` | 5/5 | 3/4, 1 unknown | An eval bug: the grader couldn't see files in the repo. Since fixed: it now gets the repo's diff and new files |
 
 Read the transcripts before trusting a score. Two of these three failures were in the evals, not the skills.
@@ -150,7 +150,7 @@ Read the transcripts before trusting a score. Two of these three failures were i
 
 ### Spending
 
-A task trial costs roughly $0.40–1 for the agent. A multi-turn task costs more: `plan` was about $1 over three turns. Each trial adds a grader call, and each turn of a multi-turn task adds a simulated-user call.
+A task trial costs roughly $0.40–1 for the agent. A multi-turn task costs more: `plan` (now part of `shape`) was about $1 over three turns. Each trial adds a grader call, and each turn of a multi-turn task adds a simulated-user call.
 
 Run an eval only when its result would change what you do:
 

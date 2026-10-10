@@ -24,3 +24,8 @@ check "the brief skill and its task are unchanged"      unchanged kernel/brief e
 check "neither kernel was edited"                       unchanged KERNEL.md kernel/KERNEL.md
 check "a lesson awaits sign-off"                        has "$WORK/*/lessons.md" "[Aa]waiting sign-off"
 check "notes skill restored after the repro"            unchanged kernel/notes
+
+
+# Every covered skill ran as a skill, not inline (KERNEL.md Layers).
+check "invoked codify"                         invoked codify
+check "invoked prove"                          invoked prove

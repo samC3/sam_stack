@@ -5,6 +5,7 @@ cat > "$P/findings.md" <<'MD'
 Answer: A JSON list in notes.json beside notes.py; each note has id, title, body, tags, archived.
 - STORE = notes.json beside the script [fact: notes.py:5]
 - add() writes the five fields [fact: notes.py:18]
+- README.md says a SQLite database at ~/.notes/notes.db; the code never touches it, so the README is stale [fact: README.md:9, notes.py:5]
 MD
 cat > "$P/decisions.md" <<'MD'
 ## D1: Export is JSON in the same shape as notes.json

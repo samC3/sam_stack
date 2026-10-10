@@ -43,8 +43,9 @@ Returns:   the answer
 """,
     f"{TASK}/task.md": "---\ncovers: sample\nturns: 1\n---\n\n# sample-task\n",
     f"{TASK}/prompt.md": "Do the sample thing.\n",
-    f"{TASK}/checks.sh": 'check "sample written" test -f sample.md\n',
+    f"{TASK}/checks.sh": 'check "sample written" test -f sample.md\ncheck "invoked sample" invoked sample\n',
     f"{TASK}/reference/apply.sh": "touch sample.md\n",
+    f"{TASK}/reference/transcript.jsonl": '{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "sample"}}]}}\n',
 }
 
 
@@ -81,12 +82,18 @@ CASES = [
     ("uncovered-skill",        sub(f"{TASK}/task.md", "covers: sample", "covers: "),            "no eval task covers"),
     ("covers-unknown-skill",   sub(f"{TASK}/task.md", "covers: sample", "covers: sample, smaple"), "covers 'smaple'"),
     ("covers-installed-skill", {**sub(f"{TASK}/task.md", "covers: sample", "covers: sample, ground"),
+                                f"{TASK}/checks.sh": REPO[f"{TASK}/checks.sh"] + "check \"invoked ground\" invoked ground\n",
                                 ".claude/skills/ground/SKILL.md": ""},                           "ok"),
     ("turns-not-a-number",     sub(f"{TASK}/task.md", "turns: 1", "turns: many"),               "turns: must be"),
     ("no-prompt",              {f"{TASK}/prompt.md": None},                                     "no prompt.md"),
     ("no-reference",           {f"{TASK}/reference/apply.sh": None},                            "no reference/apply.sh"),
+    ("no-reference-transcript", {f"{TASK}/reference/transcript.jsonl": None},                      "no reference/transcript.jsonl"),
+    # every covered skill is checked as invoked
+    ("covered-not-invoked",    sub(f"{TASK}/checks.sh", 'check "invoked sample" invoked sample\n', ""), "no `invoked sample` check"),
+    ("invoked-other-skill",    sub(f"{TASK}/checks.sh", "invoked sample\n", "invoked sampler\n"),  "no `invoked sample` check"),
+    ("invoked-check-aligned",  sub(f"{TASK}/checks.sh", '"invoked sample" invoked', '"invoked sample"     invoked'), "ok"),
     ("rubric-only",            {f"{TASK}/checks.sh": None, f"{TASK}/reference/apply.sh": None,
-                                f"{TASK}/rubric.md": "1. Anything.\n"},                          "ok"),
+                                f"{TASK}/rubric.md": "1. Anything.\n"},                          "no `invoked sample` check"),
 ]
 
 

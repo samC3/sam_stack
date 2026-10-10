@@ -1,0 +1,5 @@
+{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "shape"}}]}}
+{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "ground"}}]}}
+{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "ask"}}]}}
+{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "distill"}}]}}
+{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "judge"}}]}}
