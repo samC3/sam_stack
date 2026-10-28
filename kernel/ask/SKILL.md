@@ -11,15 +11,15 @@ Remove uncertainty about intent. Facts are `ground`'s job; ask covers what only 
 
 ```contract
 Layer:     verb
-Input:     topic; slug (existing decisions.md and findings.md are read first)
-Output:    entries D<n> (decided) and O<n> (left open) appended to $WORK/<slug>/decisions.md
+Input:     topic; slug (existing decisions.md and findings.md are read first); decisions file (default $WORK/<slug>/decisions.md)
+Output:    entries D<n> (decided) and O<n> (left open) appended to the decisions file
 Stop:      no open branch would change what gets built, or the human says stop
 Returns:   decisions made, items left open with your default for each
 ```
 
 ## Procedure
 
-1. **Load what's known.** Read `decisions.md` and `findings.md`. Don't re-ask anything decided.
+1. **Load what's known.** Read the decisions file and `findings.md`. Don't re-ask anything decided.
 2. **Ground the facts first.** For each unknown, ask yourself whether it's a fact or a preference. Facts go to `ground` before you ask anything.
 3. **Build the decision tree.** List the open decisions. Order them so that decisions others depend on come first, then by cost of getting them wrong.
 4. **Ask one question at a time.** Each question gets:
