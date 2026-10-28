@@ -182,6 +182,39 @@ fn check_registry(errors: &mut Errors, kernel: &Path, names: &BTreeSet<String>) 
     }
 }
 
+fn registered_files(kernel: &Path) -> BTreeSet<String> {
+    block(&read(kernel), "registry")
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|row| row.split_whitespace().next())
+        .map(String::from)
+        .collect()
+}
+
+fn shared_paths(text: &str) -> Vec<&str> {
+    text.match_indices("$SAM_STACK_WORK/")
+        .map(|(at, _)| {
+            text[at..]
+                .split(|c: char| c.is_whitespace() || c == '`')
+                .next()
+                .unwrap_or_default()
+                .trim_end_matches([',', '.', ';', ')'])
+        })
+        .collect()
+}
+
+fn check_shared_outputs(errors: &mut Errors, skill: &Path, registered: &BTreeSet<String>) {
+    let contract = fields(block(&read(skill), "contract").unwrap_or_default());
+    for path in shared_paths(contract.get("Output").map_or("", String::as_str)) {
+        if !registered.contains(path) {
+            errors.add(
+                skill,
+                format!("writes {path}, which KERNEL.md's registry doesn't list (KERNEL.md, State)"),
+            );
+        }
+    }
+}
+
 fn check_task(errors: &mut Errors, task: &Path, names: &BTreeSet<String>) -> Vec<String> {
     let front = frontmatter(&read(&task.join("task.md"))).unwrap_or_default();
     let covers: Vec<String> = front
@@ -273,6 +306,10 @@ pub fn lint(root: &Path) -> Vec<String> {
     let kernel = root.join("kernel/KERNEL.md");
     if kernel.is_file() {
         check_registry(&mut errors, &kernel, &names);
+        let registered = registered_files(&kernel);
+        for path in &skills {
+            check_shared_outputs(&mut errors, path, &registered);
+        }
     }
     let mut covered = BTreeSet::new();
     for task in dirs(&root.join("evals/tasks")) {

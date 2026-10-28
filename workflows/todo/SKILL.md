@@ -12,7 +12,7 @@ Keep one list the user can trust: every item is in exactly one place, and nothin
 ```contract
 Layer:     workflow
 Input:     what the user asked: add, done, start, push back, pull, note, review, or show the list
-Output:    edits to $SAM_STACK_WORK/todo/: days/YYYY-MM-DD.md, backlog.md, details/<name>.md
+Output:    edits to $SAM_STACK_WORK/todo/days/YYYY-MM-DD.md, $SAM_STACK_WORK/todo/backlog.md and $SAM_STACK_WORK/todo/details/<name>.md
 Stop:      the request is applied, every earlier open item has been triaged, and the open items are shown to the user; or a question to the user is waiting
 Returns:   today's open items, then the backlog's count, then anything that needs the user
 ```

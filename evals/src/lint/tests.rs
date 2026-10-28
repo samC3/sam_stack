@@ -238,6 +238,36 @@ fn registry_rules() {
 }
 
 #[test]
+fn shared_state_must_be_registered() {
+    let output = "Output:    entry N<n> appended to $WORK/<slug>/notes.md";
+    expect(
+        "unregistered-shared-file",
+        &sub(SKILL, output, "Output:    edits to $SAM_STACK_WORK/shared/list.md"),
+        "writes $SAM_STACK_WORK/shared/list.md, which KERNEL.md's registry doesn't list",
+    );
+    let mut registered = sub(
+        KERNEL,
+        "notes.md    sample    N1, …\n",
+        "notes.md    sample    N1, …\n$SAM_STACK_WORK/shared/list.md    sample    —\n",
+    );
+    registered.extend(sub(
+        SKILL,
+        output,
+        "Output:    edits to $SAM_STACK_WORK/shared/list.md, then `$SAM_STACK_WORK/shared/list.md`.",
+    ));
+    expect("registered-shared-file", &registered, "ok");
+    expect(
+        "shared-path-outside-the-contract",
+        &sub(
+            SKILL,
+            "Appends to $WORK/<slug>/notes.md.",
+            "Reads $SAM_STACK_WORK/other/x.md.",
+        ),
+        "ok",
+    );
+}
+
+#[test]
 fn task_rules() {
     expect(
         "uncovered-skill",

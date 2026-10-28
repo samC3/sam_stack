@@ -43,8 +43,8 @@ Skills communicate through files, not conversation memory, so work survives sess
 - `$WORK` is `$SAM_STACK_WORK/<project>`. `<project>` is the name of the repo's main checkout, `basename "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`, so every worktree and session of one repo resolves the same folder. With no repo, `$WORK` is `$SAM_STACK_WORK/_global`.
 - A task's state is `$WORK/<slug>/`. The slug is kebab-case from the task. Reuse an existing directory when the task matches it.
 - When the task is finished, move `$WORK/<slug>/` to `$WORK/_archive/<slug>/`.
-- `$SAM_STACK_WORK/lessons/` is shared across all projects and never archived. Names starting with `_`, and `lessons`, are reserved: never a slug.
-- Each verb appends to its own log, one entry per heading, with a stable id. The registry below lists every file a skill writes under `$WORK/<slug>/` or `$SAM_STACK_WORK/`, with its writer and ids. `cargo lint` rejects a row whose writer isn't a skill, and any repo-relative `work/` path in a skill.
+- `$SAM_STACK_WORK/lessons/` and `$SAM_STACK_WORK/todo/` are shared across all projects and never archived. Names starting with `_`, `lessons` and `todo` are reserved: never a slug.
+- Each verb appends to its own log, one entry per heading, with a stable id. The registry below lists every file a skill writes under `$WORK/<slug>/` or `$SAM_STACK_WORK/`, with its writer and ids. `cargo lint` rejects a row whose writer isn't a skill, any `$SAM_STACK_WORK/` path in a contract's Output that has no row, and any repo-relative `work/` path in a skill.
 
 ```registry
 # file                                    writer    ids
@@ -56,6 +56,11 @@ verdicts.md                               judge     J1, …
 tickets/NN-<name>.md                      distill   —
 lessons.md                                codify    L1, …
 $SAM_STACK_WORK/lessons/candidates.md     codify    — (shared across projects, never archived)
+$SAM_STACK_WORK/todo/days/YYYY-MM-DD.md   todo      — (shared across projects, never archived)
+$SAM_STACK_WORK/todo/backlog.md           todo      —
+$SAM_STACK_WORK/todo/details/<name>.md    todo      —
+$SAM_STACK_WORK/todo/now.md               todo      —
+$SAM_STACK_WORK/todo/decisions.md         ask       D1, … (open items O1, …)
 ```
 
 - Logs are append-only. To revise an entry, add a new one that says `supersedes F3`.
