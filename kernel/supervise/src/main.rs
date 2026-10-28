@@ -8,6 +8,7 @@ use std::time::Duration;
 
 use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
+use supervise::{Result, Session, herdr, meta, returned, state, tree};
 
 #[derive(Parser)]
 #[command(about = "Start, message, list and wait on supervised Claude Code sessions in herdr")]
@@ -37,27 +38,6 @@ enum Cmd {
     },
 }
 
-type Result<T> = std::result::Result<T, String>;
-
-fn herdr(args: &[&str]) -> Result<Value> {
-    let out = Command::new("herdr")
-        .args(args)
-        .output()
-        .map_err(|e| format!("herdr: {e}"))?;
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    if !out.status.success() {
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        let why = if stderr.trim().is_empty() {
-            stdout.trim()
-        } else {
-            stderr.trim()
-        };
-        return Err(format!("herdr {} failed: {why}", args[..2.min(args.len())].join(" ")));
-    }
-    let parsed: Value = serde_json::from_str(&stdout).unwrap_or(Value::Null);
-    Ok(parsed["result"].clone())
-}
-
 fn agent_name(folder: &Path) -> Result<String> {
     let real = folder
         .canonicalize()
@@ -83,12 +63,6 @@ fn agent_name(folder: &Path) -> Result<String> {
         ));
     }
     Ok(name)
-}
-
-fn meta(folder: &Path) -> Result<Value> {
-    let text = fs::read_to_string(folder.join("meta.json"))
-        .map_err(|_| format!("{} has no meta.json; start it first", folder.display()))?;
-    serde_json::from_str(&text).map_err(|e| format!("{}/meta.json: {e}", folder.display()))
 }
 
 fn meta_name(folder: &Path) -> Result<String> {
@@ -211,54 +185,12 @@ fn send(folder: &Path, message: &str) -> Result<()> {
         .map_err(|e| e.to_string())
 }
 
-fn returned(folder: &Path) -> String {
-    let (path, sent) = (folder.join("return.md"), folder.join("sent.md"));
-    let Ok(text) = fs::read_to_string(&path) else {
-        return "-".into();
-    };
-    let status = text
-        .lines()
-        .find_map(|l| {
-            l.split_once(':')
-                .filter(|(k, _)| k.eq_ignore_ascii_case("status"))
-                .map(|(_, v)| v.trim())
-        })
-        .unwrap_or("?");
-    let modified = |p: &Path| fs::metadata(p).and_then(|m| m.modified()).ok();
-    match (modified(&path), modified(&sent)) {
-        (Some(ret), Some(msg)) if ret < msg => format!("stale ({status})"),
-        _ => status.to_string(),
-    }
-}
-
-fn metas(dir: &Path, found: &mut Vec<PathBuf>) {
-    let mut entries: Vec<PathBuf> = fs::read_dir(dir)
-        .into_iter()
-        .flatten()
-        .flatten()
-        .map(|e| e.path())
-        .collect();
-    entries.sort();
-    for path in entries {
-        if path.is_dir() {
-            metas(&path, found);
-        } else if path.file_name().is_some_and(|n| n == "meta.json") {
-            found.push(path);
-        }
-    }
-}
-
 fn status(root: &Path) -> Result<()> {
-    let mut found = Vec::new();
-    metas(root, &mut found);
-    for path in found {
-        let folder = path.parent().unwrap_or(root);
+    for session in tree(root).iter().flat_map(Session::flatten) {
+        let folder = &session.folder;
         let info = meta(folder)?;
         let name = info["name"].as_str().unwrap_or_default();
-        let state = herdr(&["agent", "get", name]).map_or_else(
-            |_| "gone".to_string(),
-            |r| r["agent"]["agent_status"].as_str().unwrap_or("unknown").to_string(),
-        );
+        let state = state(name);
         let depth = folder
             .strip_prefix(root)
             .map_or(0, |rel| rel.iter().filter(|p| *p == "sessions").count());

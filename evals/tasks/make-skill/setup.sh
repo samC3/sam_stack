@@ -1,5 +1,5 @@
 mkdir -p evals/tasks .cargo
-grep -v '"kernel/supervise",' "$ROOT/Cargo.toml" > Cargo.toml
+grep -v -e '"kernel/supervise",' -e '"tui",' "$ROOT/Cargo.toml" > Cargo.toml
 cp "$ROOT/Cargo.lock" "$ROOT/rustfmt.toml" .
 cp "$ROOT/.cargo/config.toml" .cargo/
 cp -R "$ROOT/evals/Cargo.toml" "$ROOT/evals/src" "$ROOT/evals/lib.sh" evals/

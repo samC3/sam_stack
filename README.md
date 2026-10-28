@@ -13,7 +13,7 @@ kernel/
   codify/SKILL.md    # make a lesson structural → $WORK/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
   STANDARDS.md       # the bar for code any skill writes, and the gate that checks it
   supervise/         # combinator: child Claude sessions in herdr tabs/worktrees → $WORK/<slug>/sessions/<name>/
-    SKILL.md, Cargo.toml, src/main.rs (the `session` tool), tests/
+    SKILL.md, Cargo.toml, src/lib.rs (reads session folders), src/main.rs (the `session` tool), tests/
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus the eval task that covers it, from the verbs
   review/SKILL.md      # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
@@ -27,11 +27,14 @@ evals/               # the `evals` crate: `cargo lint`, `cargo evals graders|run
   prompts/           # the grader's and the simulated user's prompts
   lib.sh             # helpers for a task's checks.sh
   tasks/<name>/      # one directory per eval task
-Cargo.toml           # the workspace: evals and kernel/supervise, with the lints every crate obeys
+tui/                 # `cargo tui`: a live, read-only view of every supervision tree and the todo list
+Cargo.toml           # the workspace: evals, kernel/supervise and tui, with the lints every crate obeys
 gate.sh              # every code check, cheapest first (STANDARDS.md)
 ```
 
 The tools are Rust. You need a Rust toolchain, plus `cargo install cargo-llvm-cov cargo-mutants` for the gate.
+
+`cargo tui` shows every session under `$SAM_STACK_WORK/<project>/<slug>/sessions/`, nested as supervisors started them, with each one's herdr state and return status, beside the todo list (today's day file, or the latest one before triage, and the backlog). It refreshes every 2 seconds and only reads: changes go through the `todo` skill and the `session` tool. Keys: ←/→ switch pane, ↑/↓ move, tab swaps today and backlog, enter opens a session's brief and return or an item's details, r refreshes, q quits.
 
 ## Rules
 

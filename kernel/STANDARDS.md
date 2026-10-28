@@ -14,12 +14,12 @@ Use the repo's own tools for each rule. Where a repo has no tool for one, say so
 
 ## This repo
 
-- **Rust for anything with logic:** skill tools, deterministic scripts for repeatable tasks, and the eval runner. A tool lives with its owner, as a crate in the root `Cargo.toml` workspace: the evals' in `evals/`, a skill's in its own folder (`kernel/supervise/`).
+- **Rust for anything with logic:** skill tools, deterministic scripts for repeatable tasks, and the eval runner. A tool lives with its owner, as a crate in the root `Cargo.toml` workspace: the evals' in `evals/`, a skill's in its own folder (`kernel/supervise/`), and a view that reads more than one skill's state in `tui/`.
 - **Shell only for glue:** a task's `checks.sh`, `setup.sh` and `reference/apply.sh`, a task's `bin/` fakes, and `gate.sh`. Glue is a sequence of commands. Once a script needs logic worth testing, it becomes Rust, with tests.
 - **The compiler is the first reviewer.** `[workspace.lints]` forbids `unsafe`, makes every warning an error, and denies clippy's `all` and `pedantic` groups.
 - **Errors are values.** Return `Result` with a message that says what failed and on what path. Report it once, in `main`, and exit non-zero. Don't panic on bad input.
 - **Tests:** unit tests in `<module>/tests.rs` beside the module (`#[cfg(test)] mod tests;`), and tests of a binary through its CLI in the crate's `tests/`. Fake an external program (`claude`, `herdr`) with a script first on the `PATH`, the way the eval tasks do.
-- **Few dependencies.** Prefer the standard library. A crate must earn its place: today that is `clap` and `serde_json`.
+- **Few dependencies.** Prefer the standard library. A crate must earn its place: today that is `clap`, `serde_json` and `ratatui` (for `tui`, with the `crossterm` backend it re-exports).
 
 ## The gate
 

@@ -1,3 +1,4 @@
 [alias]
 lint = "run -q -p evals -- lint"
 evals = "run -q -p evals --"
+tui = "run -q -p tui --"

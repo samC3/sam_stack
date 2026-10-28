@@ -1,0 +1,12 @@
+[package]
+name = "tui"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+ratatui.workspace = true
+supervise = { path = "../kernel/supervise" }
+
+[lints]
+workspace = true
