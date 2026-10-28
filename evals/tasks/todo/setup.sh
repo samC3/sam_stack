@@ -10,3 +10,10 @@ MD
 cat > "$T/backlog.md" <<'MD'
 TODO     Upgrade the database driver  [repo]
 MD
+cat > "$T/now.md" <<'MD'
+# Now
+1. Write the release notes  [repo]
+2. Fix the flaky login test  [repo] → flaky-login
+3. Tidy the CI config  [repo]
+MD
+cp "$T/now.md" "$SAM_STACK_WORK/now.before"
