@@ -1,4 +1,3 @@
-# A correct shape outcome, used by `evals/run.py --graders`.
 P="$WORK/notes-export"; mkdir -p "$P/tickets"
 cat > "$P/findings.md" <<'MD'
 ## F1: Where do notes live, and what does a note contain?

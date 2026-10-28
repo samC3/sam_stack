@@ -1,4 +1,3 @@
-# A correct make-skill outcome, used by `evals/run.py --graders`.
 mkdir -p workflows/investigate evals/tasks/investigate/reference "$WORK/make-skill-investigate"
 cat > workflows/investigate/SKILL.md <<'MD'
 ---

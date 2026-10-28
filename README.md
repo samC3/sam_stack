@@ -11,20 +11,27 @@ kernel/
   prove/SKILL.md     # does it work       → $WORK/<slug>/proofs.md     (P1…)
   judge/SKILL.md     # is it good / which one → $WORK/<slug>/verdicts.md (J1…)
   codify/SKILL.md    # make a lesson structural → $WORK/<slug>/lessons.md (L1…); the only skill that edits KERNEL.md
+  STANDARDS.md       # the bar for code any skill writes, and the gate that checks it
   supervise/         # combinator: child Claude sessions in herdr tabs/worktrees → $WORK/<slug>/sessions/<name>/
-    SKILL.md, session.py, session_test.py
+    SKILL.md, Cargo.toml, src/main.rs (the `session` tool), tests/
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus the eval task that covers it, from the verbs
   review/SKILL.md      # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
   shape/SKILL.md       # idea or doc → spec.md + tickets/ for a build workflow; asks rather than assumes
-evals/
-  lint.py            # free structural check of every skill, task and the registry
-  lint_test.py       # its tests: one row per rule, each with a near-miss that must pass
-  run.py             # eval runner; --graders tests each task's checks for free
+evals/               # the `evals` crate: `cargo lint`, `cargo evals graders|run|invoked|comments`
+  src/lint.rs        # free structural check of every skill, task, the registry, and comments in code
+  src/eval.rs        # eval runner; `graders` tests each task's checks for free
+  src/transcript.rs  # reading a run's stream-json transcript
+  src/comments.rs    # finds comments in Rust, shell and Python
+  src/*/tests.rs, tests/   # their tests: each lint rule has a near-miss that must pass
   prompts/           # the grader's and the simulated user's prompts
   lib.sh             # helpers for a task's checks.sh
   tasks/<name>/      # one directory per eval task
+Cargo.toml           # the workspace: evals and kernel/supervise, with the lints every crate obeys
+gate.sh              # every code check, cheapest first (STANDARDS.md)
 ```
+
+The tools are Rust. You need a Rust toolchain, plus `cargo install cargo-llvm-cov cargo-mutants` for the gate.
 
 ## Rules
 
@@ -59,7 +66,7 @@ evals/
 
 4. **Every skill follows the contract in `KERNEL.md`.** New skills are compositions of the kernel verbs. Add a new verb only when the kernel's admission rule allows it.
 
-5. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval task that covers it (or extend an existing one), then checks both with `evals/lint.py` and `evals/run.py --graders`. It runs a paid eval only once per new task; anything beyond that, it asks you first.
+5. **Make skills with `make-skill`.** It wires `ground`, `ask`, `distill`, `prove` and `judge` together to write the skill and an eval task that covers it (or extend an existing one), then checks both with `cargo lint` and `cargo evals graders`. It runs a paid eval only once per new task; anything beyond that, it asks you first.
 
 ## Evals
 
@@ -68,16 +75,16 @@ Evals are a small set of **tasks**: realistic scenarios that run a workflow end 
 ### Running
 
 ```sh
-evals/lint.py                             # free: structure of every skill and task
-evals/lint_test.py                        # free: lint.py still rejects what it should, and only that
-evals/run.py --graders                    # free: each task's checks fail untouched and pass on its reference
-evals/run.py                              # every task, once
-evals/run.py review                       # named tasks only
-evals/run.py --repeat 3 --jobs 6 shape
+cargo lint                                # free: structure of every skill and task, and no comments in code
+cargo test -p evals                       # free: lint still rejects what it should, and only that
+cargo evals graders                       # free: each task's checks fail untouched and pass on its reference
+cargo evals run                           # every task, once
+cargo evals run review                    # named tasks only
+cargo evals run --repeat 3 --jobs 6 shape
 
 # Baseline comparison: run against the skills as of HEAD
 git worktree add /tmp/skills-base HEAD
-evals/run.py --root /tmp/skills-base shape
+cargo evals run --root /tmp/skills-base shape
 git worktree remove /tmp/skills-base
 ```
 
@@ -115,18 +122,18 @@ fixture/  work/  setup.sh   # the repo, the task state in $WORK, and setup after
 bin/                 # fake tools put first on the PATH (e.g. a fake herdr)
 checks.sh            # named outcome checks: check "<label>" <command ...>
 rubric.md            # numbered dimensions, each graded PASS / FAIL / UNKNOWN by a model
-reference/apply.sh   # produces a correct outcome, for --graders
-reference/transcript.jsonl  # the Skill calls a correct run makes, for --graders
+reference/apply.sh   # produces a correct outcome, for `graders`
+reference/transcript.jsonl  # the Skill calls a correct run makes, for `graders`
 ```
 
 How a task should be built:
 - **Grade the outcome.** Check files, verdicts and git state. The one process check is `invoked <skill>` for each skill in `covers:`, which lint requires.
-- **Give every task a reference solution,** and run `--graders` before any paid run. A check that can't pass on a correct outcome is a broken task, not a weak agent.
+- **Give every task a reference solution,** and run `cargo evals graders` before any paid run. A check that can't pass on a correct outcome is a broken task, not a weak agent.
 - **Make it multi-turn when the workflow asks the user things.** `user.md` gives the simulated user preferences, plus at least one point it hasn't decided, so you can see whether the agent keeps it open.
 - **Use the rubric only for what a script can't see,** one dimension per line. UNKNOWN counts as not passing, so a vague dimension shows up instead of passing silently.
 - **Every skill is covered by at least one task.** Lint checks each task's `covers:` and rejects names that aren't skills.
 
-`setup.sh` and `reference/apply.sh` get `$ROOT` (this repo), and `$WORK` and `$SAM_STACK_WORK` (the run's task state). `checks.sh` runs in the run repo with `lib.sh` loaded: `check "<label>" <command ...>` records one named result, `has <glob> <regex>` is the usual command, and `invoked <skill>` checks the transcript for a Skill call. A run that creates a `work/` folder in the repo fails. The grader is a separate Claude session. It reads the rubric, a digest of the transcript, and the outcome: the run's task state, the repo's diff since setup, and any new files.
+`setup.sh` and `reference/apply.sh` get `$ROOT` (this repo), and `$WORK` and `$SAM_STACK_WORK` (the run's task state). `checks.sh` runs in the run repo with `lib.sh` loaded: `check "<label>" <command ...>` records one named result, `has <glob> <regex>` is the usual command, and `invoked <skill>` checks the transcript for a Skill call. `$EVALS_BIN` is the `evals` binary running the trial, for checks that need it (`"$EVALS_BIN" comments <rev>` lists comments added since a revision). Like all code here, task scripts carry no comments: a check's label says what it checks. A run that creates a `work/` folder in the repo fails. The grader is a separate Claude session. It reads the rubric, a digest of the transcript, and the outcome: the run's task state, the repo's diff since setup, and any new files.
 
 ### Results so far
 
@@ -155,11 +162,11 @@ A task trial costs roughly $0.40–1 for the agent. A multi-turn task costs more
 Run an eval only when its result would change what you do:
 
 1. **Tier the runs.**
-   - After editing a task: `evals/run.py --graders` (free).
+   - After editing a task: `cargo evals graders` (free).
    - After editing a skill: run the tasks that cover it, once.
    - Before committing a kernel change: run every task once.
    - Repeat only the tasks whose result is ambiguous.
 2. **Spend repeats where you're uncertain.** A task that has passed 4 out of 4 needs one trial as a regression check. A task at 2 out of 4 is where repeats teach you something.
 3. **Stop when the answer is clear.** If the first 3 runs fail the same way, you don't need 5.
-4. **Use the cheapest check first.** Run `evals/lint.py` and `evals/run.py --graders` before any paid run; both are free. Push criteria into `checks.sh` where you can, since checks are free and don't vary between runs.
+4. **Use the cheapest check first.** Run `cargo lint` and `cargo evals graders` before any paid run; both are free. Push criteria into `checks.sh` where you can, since checks are free and don't vary between runs.
 5. **Use a cheaper grader, but the real model under test.** The grader can run on a smaller model once it has been checked against human labels. The agent under test should be the model you actually use, or the results won't carry over.

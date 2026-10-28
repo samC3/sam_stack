@@ -7,8 +7,6 @@ check "goal verdicts recorded"               has "$R/verdicts.md" "^## J[0-9]"
 check "work under review untouched"          git diff --quiet reviewed -- export.py test_export.py
 check "author's task state untouched"        diff -r "$SAM_STACK_WORK/../author-state" "$WORK/csv-export"
 
-
-# Every covered skill ran as a skill, not inline (KERNEL.md Layers).
 check "invoked review"                         invoked review
 check "invoked ground"                         invoked ground
 check "invoked judge"                          invoked judge

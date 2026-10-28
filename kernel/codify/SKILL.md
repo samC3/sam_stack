@@ -23,16 +23,16 @@ Returns:   the L id (or "candidate"), the level chosen, files changed, and anyth
 2. **Name the class.** State the failure so a reader who never saw the incident would recognise it. Leave out the incident's names, numbers and phrasing.
    - If the lesson comes from a failing check, decide whether the behaviour or the check is wrong: `judge` with stance `choose`. Loosening a check is a weakening (step 6).
    - If the fix depends on intent (who owns a trigger phrase, which trade-off wins), hand that part to `ask`.
-3. **Subtract first.** Search the skills, `KERNEL.md`, `evals/lint.py` and the eval tasks for a rule that already covers the class.
+3. **Subtract first.** Search the skills, `KERNEL.md`, the lint (`evals/src/lint.rs`) and the eval tasks for a rule that already covers the class.
    - If one exists, it wasn't enforced strongly enough. Move it up the ladder; don't restate it.
    - If your fix makes existing text redundant, propose deleting that text.
 4. **Walk the ladder, strongest first.** This is principle 6 for this repo: lint, then test (check, flags, rubric), then skill text. Take the first level that can block or deterministically reject the failure:
 
    | Level | Use when |
    |---|---|
-   | `evals/lint.py` rule | the failure is visible in skill or task files |
+   | lint rule (`evals/src/lint.rs`) | the failure is visible in skill or task files |
    | task `checks.sh` | a script can see it in a run's outcome |
-   | runner flags (`evals/run.py`) | a tool or permission setting can prevent it |
+   | runner flags (`evals/src/eval.rs`) | a tool or permission setting can prevent it |
    | task `rubric.md` | only a grader can see it |
    | the owning skill's `SKILL.md` | only wording can change the behaviour |
    | `KERNEL.md` | the wording applies to every skill |
@@ -40,7 +40,7 @@ Returns:   the L id (or "candidate"), the level chosen, files changed, and anyth
 
    An eval check detects a failure but doesn't prevent it. A model habit therefore usually needs wording in the owning skill plus a check from step 5. Record every stronger level you passed over and why it didn't fit.
 5. **Leave a regression check that fails on the incident.** Use the cheapest kind that can:
-   - For a lint rule: add a case to `evals/lint_test.py` that expects the error, plus a near-miss case that must still pass (expects `ok`). Run `python3 evals/lint_test.py`.
+   - For a lint rule: add a case to `evals/src/lint/tests.rs` that expects the error, plus a near-miss case that must still pass (expects `ok`). Run `cargo test -p evals` and `cargo lint`.
    - For behaviour: a check or rubric dimension in an existing task in `evals/tasks/` that exercises the behaviour, or a new task if none does. Its prompt must differ on the surface from the incident (a different domain and wording) so the fix isn't fitted to one run.
    - Regression checks live only in those two places. Don't invent new check directories.
    - The original incident counts as the red run; cite it. Run the green run with `prove` and log its P id in the same slug. A paid eval gets one green run. Ask before running more.
@@ -72,3 +72,4 @@ Seen: <date>, <evidence>. Needs: a second independent incident, or a determinist
 - Fix the class, not the instance. Repairing the one bad file the incident touched doesn't codify anything.
 - Wording is near the bottom of the ladder, not the default.
 - One lesson per entry. Never codify from memory: no evidence, no edit.
+- Code you write, a lint rule or a script, meets `STANDARDS.md` (beside `KERNEL.md`), and `./gate.sh` passes.

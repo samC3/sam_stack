@@ -1,4 +1,3 @@
-# A correct review outcome, used by `evals/run.py --graders`.
 R="$WORK/review-csv-export"; mkdir -p "$R"
 cat > "$R/proofs.md" <<'MD'
 ## P1: to_csv leaves a comma inside a value unquoted

@@ -29,7 +29,7 @@ Stop:      the observable condition that ends the skill
 Returns:   what the caller gets back in the conversation
 ```
 
-`evals/lint.py` checks every skill's frontmatter and contract, and every eval task.
+`cargo lint` checks every skill's frontmatter and contract, and every eval task.
 
 The `description` says what the skill does and when to use it, including the phrases a user would type. Routing depends on it.
 
@@ -44,7 +44,7 @@ Skills communicate through files, not conversation memory, so work survives sess
 - A task's state is `$WORK/<slug>/`. The slug is kebab-case from the task. Reuse an existing directory when the task matches it.
 - When the task is finished, move `$WORK/<slug>/` to `$WORK/_archive/<slug>/`.
 - `$SAM_STACK_WORK/lessons/` is shared across all projects and never archived. Names starting with `_`, and `lessons`, are reserved: never a slug.
-- Each verb appends to its own log, one entry per heading, with a stable id. The registry below lists every file a skill writes under `$WORK/<slug>/` or `$SAM_STACK_WORK/`, with its writer and ids. `evals/lint.py` rejects a row whose writer isn't a skill, and any repo-relative `work/` path in a skill.
+- Each verb appends to its own log, one entry per heading, with a stable id. The registry below lists every file a skill writes under `$WORK/<slug>/` or `$SAM_STACK_WORK/`, with its writer and ids. `cargo lint` rejects a row whose writer isn't a skill, and any repo-relative `work/` path in a skill.
 
 ```registry
 # file                                    writer    ids
@@ -79,3 +79,4 @@ An untagged claim is treated as an inference.
 5. **Guard the context window.** Send bulk reading, searching and attempts to a subagent; keep summaries and ids in the main thread.
 6. **Encode lessons in structure.** Enforce at the strongest level available: type, lint, test, skill text, then note.
 7. **Stopping is part of the work.** When the stop condition can't be reached within budget, stop and report state, what blocked you, and what would unblock it.
+8. **Hold code to the standard.** Code any skill writes, in this repo or another, meets `STANDARDS.md`, beside this file.

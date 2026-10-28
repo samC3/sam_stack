@@ -19,11 +19,11 @@ Stop:      every child's return is verified and accepted, or handed to the user 
 Returns:   one line per session (name, herdr state, verified status, ids), then what needs the user
 ```
 
-The mechanics are in `session.py`, next to this file (`python3 <this skill's directory>/session.py --help`). It only works inside a herdr pane. If `HERDR_ENV` isn't `1`, say so and offer to do the work inline instead.
+The mechanics are in the `session` tool, a Rust crate in this skill's folder. Run it as `cargo run -q --manifest-path <this skill's directory>/Cargo.toml -- <command>` (`-- --help` lists the commands); below, `session` means that command. It only works inside a herdr pane. If `HERDR_ENV` isn't `1`, say so and offer to do the work inline instead.
 
 ## Session folders
 
-A child's folder is its task state. The first message `session.py` sends tells the child the folder's absolute path. Its logs (`findings.md`, `proofs.md`, …) and `return.md` go there, and its own children go in the folder's `sessions/`. A child's ids are therefore scoped to its folder: `parser`'s P1 is `sessions/parser/proofs.md` P1, and your own ids stay in `$WORK/<slug>/`.
+A child's folder is its task state. The first message `session start` sends tells the child the folder's absolute path. Its logs (`findings.md`, `proofs.md`, …) and `return.md` go there, and its own children go in the folder's `sessions/`. A child's ids are therefore scoped to its folder: `parser`'s P1 is `sessions/parser/proofs.md` P1, and your own ids stay in `$WORK/<slug>/`.
 
 Don't archive the slug while any session in it is still open, or before the user has dealt with the children's branches.
 
@@ -49,9 +49,9 @@ Don't archive the slug while any session in it is still open, or before the user
             then say so in one line.
    ```
 
-3. **Start each child** with `session.py start <folder>`, adding `--edit` when it changes code. An editing child gets its own herdr worktree on branch `supervise/<name>` (`git worktree list` shows where), so children never edit the same checkout. A child that doesn't edit gets a tab in your workspace, starting in the current directory (or `--cwd`).
+3. **Start each child** with `session start <folder>`, adding `--edit` when it changes code. An editing child gets its own herdr worktree on branch `supervise/<name>` (`git worktree list` shows where), so children never edit the same checkout. A child that doesn't edit gets a tab in your workspace, starting in the current directory (or `--cwd`).
 
-4. **Wait on events, don't poll.** Run `session.py wait <folder> …` for the children still working, as a background command. You're woken when one of them goes idle, finishes, or is blocked. Handle it (steps 5 and 6), then wait again on the ones still working. If the user asks for an update in the meantime, run `session.py status $WORK/<slug>/sessions`, verify any new done return, and report.
+4. **Wait on events, don't poll.** Run `session wait <folder> …` for the children still working, as a background command. You're woken when one of them goes idle, finishes, or is blocked. Handle it (steps 5 and 6), then wait again on the ones still working. If the user asks for an update in the meantime, run `session status $WORK/<slug>/sessions`, verify any new done return, and report.
 
 5. **Handle the child that woke you.** Check its herdr state first, then its return:
    - **herdr state `blocked`:** an approval or question dialog is open in its pane. Don't answer approvals for the user. Run `herdr notification show "<name> needs you" --sound request` and tell the user which session.

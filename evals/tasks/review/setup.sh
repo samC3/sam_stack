@@ -1,4 +1,3 @@
-# The author's branch: criteria 1 and 2 are done, criterion 3 isn't, and the PR body and proof say all three are.
 git checkout -qb csv-export
 cat > export.py <<'PY'
 def to_csv(rows):
@@ -39,5 +38,4 @@ Where to look: export.py.
 MD
 git add -A && git commit -qm "Add CSV export"
 git tag reviewed
-# A copy of the author's state, to show the reviewer didn't edit it.
 cp -R "$WORK/csv-export" "$SAM_STACK_WORK/../author-state"

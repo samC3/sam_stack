@@ -1,4 +1,3 @@
-# A correct build outcome, used by `evals/run.py --graders`.
 S="$WORK/slugify"
 git checkout -qb slugify
 cat >> textkit.py <<'PY'

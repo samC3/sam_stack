@@ -13,7 +13,7 @@ The workflow that builds skills, including itself. It is wiring only: how to ask
 Layer:     workflow
 Input:     the need (what keeps happening, or what should be automated), or the path of an existing skill to regenerate; slug (default make-skill-<name>)
 Output:    kernel/<name>/SKILL.md or workflows/<name>/SKILL.md; an eval task in evals/tasks/ whose covers: names it; logs in $WORK/<slug>/
-Stop:      evals/lint.py passes and the behaviour eval has a recorded verdict (or is recorded as not run, with the reason). When regenerating, judge has chosen between the old and new versions.
+Stop:      cargo lint passes and the behaviour eval has a recorded verdict (or is recorded as not run, with the reason). When regenerating, judge has chosen between the old and new versions.
 Returns:   the paths written, the eval verdicts with their cost, and any open questions
 ```
 
@@ -39,17 +39,17 @@ Returns:   the paths written, the eval verdicts with their cost, and any open qu
    - For a workflow, the body is a list of steps, each naming a verb or combinator and its parameters.
    - If text explaining *how* to do something appears, it belongs in a verb. Record it as an open question for `codify` instead of keeping it in the workflow.
 
-4. **Cover it with an eval task.** If an existing task already runs a workflow that would exercise the skill, add the skill to its `covers:` and add a check or rubric dimension for the habit from step 2. Otherwise `distill` a new task. Reader: `evals/run.py`. Format: `eval-task`, targeting the habit and its typical failure from step 2. If the trigger phrases overlap another skill's, also cover a prompt where the skill must not fire, as a check that the overlapping skill's outcome appears instead.
+4. **Cover it with an eval task.** If an existing task already runs a workflow that would exercise the skill, add the skill to its `covers:` and add a check or rubric dimension for the habit from step 2. Otherwise `distill` a new task. Reader: the eval runner (`cargo evals`). Format: `eval-task`, targeting the habit and its typical failure from step 2. If the trigger phrases overlap another skill's, also cover a prompt where the skill must not fire, as a check that the overlapping skill's outcome appears instead.
 
-5. **`prove` the structure:** run `evals/lint.py` and `evals/run.py --graders <task>`. Fix the skill or the task until both pass.
+5. **`prove` the structure:** run `cargo lint` and `cargo evals graders <task>`. Fix the skill or the task until both pass.
 
-6. **`prove` the behaviour:** run `evals/run.py <task>` once. Record the cost alongside the verdict.
+6. **`prove` the behaviour:** run `cargo evals run <task>` once. Record the cost alongside the verdict.
    - Each run costs real tokens. Before running anything beyond one run per new or changed task, say what you want to run and its estimated cost, and wait for the user.
    - If the user has said not to run evals, record the behaviour check as not run. Don't claim the skill works.
 
 7. **When regenerating, `judge` old against new.** Stance: choose.
    - Put the old version on a baseline checkout: `git worktree add <tmp> HEAD`.
-   - Run the covering tasks against both versions: `evals/run.py --root <tmp> <task>` for the old one, and the plain command for the new one. Confirm this extra cost with the user first, as in step 6.
+   - Run the covering tasks against both versions: `cargo evals run --root <tmp> <task>` for the old one, and the plain command for the new one. Confirm this extra cost with the user first, as in step 6.
    - Judge the two versions blind.
    - Criteria: the eval results; whether each contract field is concrete; whether the habit is stated; and length (shorter wins a tie).
    - If the old version wins, restore it with `git checkout -- <path>` and report why.
@@ -61,3 +61,4 @@ Returns:   the paths written, the eval verdicts with their cost, and any open qu
 - Create one skill per run.
 - Never edit `KERNEL.md`. That's `codify`'s job. Until `codify` exists, propose kernel changes to the user as open questions.
 - Don't install or link skills into `~/.claude`. Installing is the user's call.
+- If the skill needs a tool, a deterministic script for a step that repeats, write it in Rust in the skill's folder to `kernel/STANDARDS.md`, and `./gate.sh` passes.

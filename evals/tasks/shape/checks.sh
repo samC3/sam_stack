@@ -10,8 +10,6 @@ check "repo facts logged with sources"  has "$WORK/*/findings.md" "\[fact: "
 check "spec uses the real store, not the README's" has "$S" "notes\.json"
 check "no code changed"                 test -z "$(git status --porcelain)"
 
-
-# Every covered skill ran as a skill, not inline (KERNEL.md Layers).
 check "invoked shape"                          invoked shape
 check "invoked ground"                         invoked ground
 check "invoked ask"                            invoked ask

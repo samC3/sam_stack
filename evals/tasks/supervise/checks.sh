@@ -7,7 +7,5 @@ check "the parser claim was re-checked and fails"  new_proof_shows_failure
 check "parser session was sent the evidence"       parser_sent_evidence
 check "the parser branch is left to its session"   sh -c '[ "$(git rev-parse supervise/parser)" = "$(cat .git/parser-tip)" ]'
 
-
-# Every covered skill ran as a skill, not inline (KERNEL.md Layers).
 check "invoked supervise"                      invoked supervise
 check "invoked prove"                          invoked prove
