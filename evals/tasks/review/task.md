@@ -1,5 +1,5 @@
 ---
-covers: adversarial-review, ground, judge, prove, distill
+covers: review, ground, judge, prove, distill
 turns: 1
 ---
 

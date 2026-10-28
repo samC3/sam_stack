@@ -1,6 +1,6 @@
 ---
 name: build
-description: Implement the spec and tickets that shape wrote, one ticket at a time in dependency order, test first, to a fixed quality bar and with zero code comments, committing each ticket on a branch and ending with a PR write-up. Builds straight from the prompt only when every requirement in it is testable as stated. Use for "build this", "build the tickets", "implement the spec", "implement the tickets", "start building <slug>". Not for "shape this" or planning (shape), "review this branch" (adversarial-review), "verify" or "prove it" on its own (prove), or "make a skill" (make-skill).
+description: Implement the spec and tickets that shape wrote, one ticket at a time in dependency order, test first, to a fixed quality bar and with zero code comments, committing each ticket on a branch and ending with a PR write-up. Builds straight from the prompt only when every requirement in it is testable as stated. Use for "build this", "build the tickets", "implement the spec", "implement the tickets", "start building <slug>". Not for "shape this" or planning (shape), "review this branch" (review), "verify" or "prove it" on its own (prove), or "make a skill" (make-skill).
 ---
 
 # Build
@@ -42,7 +42,7 @@ Returns:   the branch, one line per ticket (committed | stopped, with P and J id
    5. **Fix, at most twice.** A round is: fix every failing proof and every finding judge marked confirmed, then repeat substeps 3 and 4. If anything still fails after the second round, stop the run and leave the ticket uncommitted. Lint, format and type failures count as failing proofs.
    6. **Commit.** One commit per ticket. The message names the ticket and its green P id.
 
-4. **`distill` the PR write-up,** once every ticket in this run is committed. List the tickets left out, with the `O` ids they wait on. Reader: a reviewer running adversarial-review, who has `$WORK/<slug>/` and the branch. Format: `pr`.
+4. **`distill` the PR write-up,** once every ticket in this run is committed. List the tickets left out, with the `O` ids they wait on. Reader: a reviewer running review, who has `$WORK/<slug>/` and the branch. Format: `pr`.
 
 ## Rules
 

@@ -15,7 +15,7 @@ kernel/
     SKILL.md, session.py, session_test.py
 workflows/
   make-skill/SKILL.md  # builds or regenerates a skill, plus the eval task that covers it, from the verbs
-  adversarial-review/SKILL.md  # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
+  review/SKILL.md      # cold review of a PR/branch: grounds its goals, re-proves each, then hunts defects
   shape/SKILL.md       # idea or doc → spec.md + tickets/ for a build workflow; asks rather than assumes
 evals/
   lint.py            # free structural check of every skill, task and the registry
@@ -99,7 +99,7 @@ Each trial runs in a fresh git repo, set up the way a real repo would be:
 
 | Task | Scenario | Covers |
 |---|---|---|
-| `review` | A branch whose PR claims "done and tested" but misses one of three spec criteria | adversarial-review, ground, judge, prove, distill |
+| `review` | A branch whose PR claims "done and tested" but misses one of three spec criteria | review, ground, judge, prove, distill |
 | `shape` | "Let users export their notes", in a small CLI whose README names the wrong store (SQLite; the code uses notes.json). A simulated user picks format, destination and scope, and leaves restore undecided. The spec and tickets must keep restore open, invent nothing, and give each ticket a runnable Verify | shape, ground, ask, distill, judge |
 | `make-skill` | Build a small workflow with every decision given, and be honest that the paid eval wasn't run | make-skill, ground, distill, prove |
 | `supervise` | Two child sessions have settled; one returns "all tests pass" but a test fails on its branch. Asked to merge what's finished, the supervisor must re-run the check, not merge, and send the evidence back (herdr is faked) | supervise, prove |

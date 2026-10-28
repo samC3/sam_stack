@@ -9,7 +9,7 @@ check "author's task state untouched"        diff -r "$SAM_STACK_WORK/../author-
 
 
 # Every covered skill ran as a skill, not inline (KERNEL.md Layers).
-check "invoked adversarial-review"             invoked adversarial-review
+check "invoked review"                         invoked review
 check "invoked ground"                         invoked ground
 check "invoked judge"                          invoked judge
 check "invoked prove"                          invoked prove

@@ -1,9 +1,9 @@
 ---
-name: adversarial-review
+name: review
 description: Review a finished piece of work, usually a PR or branch, from a fresh session. Find the goals it was written to meet, re-prove each one rather than trusting the author's claims, then hunt for defects. Use for "adversarial review", "review PR #12", "review this branch", "does this meet its goals", "does this meet the spec", "check this PR does what it says". Not for comparing or ranking options, or for reviewing a snippet that has no goals behind it; those go to judge.
 ---
 
-# Adversarial review
+# Review
 
 Wiring for a cold review: what the work was meant to do, whether it does it, and what it breaks. The author's account is a lead, never evidence.
 
